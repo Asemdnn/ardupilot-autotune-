@@ -1,0 +1,52 @@
+[
+    {
+        "instruction": "Analyze this flight log and recommend PID tuning adjustments.",
+        "input": "Flight Log Analysis:\n- Max Roll Error: 15.2°\n- Overshoot: 12%\n- Settling Time: 2.3s\n- Current ATC_RAT_RLL_P: 0.12\n- Current ATC_RAT_RLL_I: 0.05\n- Current ATC_RAT_RLL_D: 0.002\n- Vibrations: 2.1g\n\nFlight Conditions: FPV racing, indoor, light wind",
+        "output": "Analysis:\n- Roll overshoot (12%) indicates P gain too high\n- Settling time (2.3s) acceptable but could improve\n- Vibration levels (2.1g) within acceptable limits\n\nRecommendations:\n1. Reduce ATC_RAT_RLL_P: 0.12 → 0.09 (25% reduction)\n   Rationale: High P gain causes overshoot\n2. Increase ATC_RAT_RLL_D: 0.002 → 0.004 (100% increase)\n   Rationale: Add damping to reduce oscillation\n3. Keep ATC_RAT_RLL_I: 0.05 (no change)"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend PID tuning adjustments.",
+        "input": "Flight Log Analysis:\n- Max Roll Error: 3.1°\n- Overshoot: 2%\n- Settling Time: 0.8s\n- Current ATC_RAT_RLL_P: 0.09\n- Current ATC_RAT_RLL_I: 0.05\n- Current ATC_RAT_RLL_D: 0.004\n- Vibrations: 1.5g\n\nFlight Conditions: Cinematic drone, outdoor, calm",
+        "output": "Analysis:\n- Roll performance is excellent (3.1° error, 2% overshoot)\n- Settling time is optimal (0.8s)\n- Vibration levels are good (1.5g)\n\nRecommendations:\n- No parameter changes needed\n- Current PID values are well-tuned for this use case"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend PID tuning adjustments.",
+        "input": "Flight Log Analysis:\n- Max Roll Error: 22.5°\n- Overshoot: 18%\n- Settling Time: 4.2s\n- Current ATC_RAT_RLL_P: 0.15\n- Current ATC_RAT_RLL_I: 0.03\n- Current ATC_RAT_RLL_D: 0.001\n- Vibrations: 3.8g\n\nFlight Conditions: Heavy lift drone, outdoor, moderate wind",
+        "output": "Analysis:\n- Significant overshoot (18%) - P gain far too high\n- Long settling time (4.2s) - needs more I term\n- High vibrations (3.8g) - filter adjustment needed\n- Heavy payload requires different tuning approach\n\nRecommendations:\n1. Reduce ATC_RAT_RLL_P: 0.15 → 0.08 (47% reduction)\n   Rationale: Heavy drones need lower P for stability\n2. Increase ATC_RAT_RLL_I: 0.03 → 0.06 (100% increase)\n   Rationale: More I term for better tracking\n3. Increase ATC_RAT_RLL_D: 0.001 → 0.003 (200% increase)\n   Rationale: More damping for heavy payload\n4. Reduce INS_GYRO_FILTER: 80 → 50 Hz\n   Rationale: Reduce vibration impact on control"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend navigation parameter adjustments.",
+        "input": "Flight Log Analysis:\n- GPS Glitches: 12 occurrences\n- Position Drift: 5.2m\n- Navigation Error: 3.8m\n- Current EK3_GPS_GAIN: 1.0\n- Current EK3_ABIAS_P: 0.01\n\nFlight Conditions: Survey drone, outdoor, moderate GPS signal",
+        "output": "Analysis:\n- 12 GPS glitches indicate interference or configuration issues\n- Position drift (5.2m) is too high for survey work\n- Navigation error exceeds acceptable threshold\n\nRecommendations:\n1. Increase EK3_GPS_GAIN: 1.0 → 0.7 (reduce GPS reliance)\n   Rationale: GPS signal not reliable, trust IMU more\n2. Adjust EK3_ABIAS_P: 0.01 → 0.005 (lower variance)\n   Rationale: Reduce accelerometer bias drift"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend filter adjustments.",
+        "input": "Flight Log Analysis:\n- Vibrations: 4.2g (high)\n- FFT Analysis: Peak at 180Hz\n- Current INS_GYRO_FILTER: 80Hz\n- Current INS_HNTC2_ENABLE: 0 (disabled)\n\nFlight Conditions: 5 inch FPV quad, aggressive flying",
+        "output": "Analysis:\n- High vibrations (4.2g) causing control issues\n- FFT shows motor frequency peak at 180Hz\n- Harmonic notch filter is disabled\n\nRecommendations:\n1. Enable INS_HNTC2_ENABLE: 0 → 1\n   Rationale: Enable harmonic notch for vibration reduction\n2. Set INS_HNTC2_FREQ: 180Hz\n   Rationale: Target motor frequency peak\n3. Set INS_HNTC2_BW: 40Hz\n   Rationale: Narrow notch to preserve control bandwidth"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend attitude controller adjustments.",
+        "input": "Flight Log Analysis:\n- Max Pitch Error: 18.3°\n- Overshoot: 14%\n- Oscillations: Visible wobble after maneuvers\n- Current ATC_RAT_PIT_P: 0.12\n- Current ATC_RAT_PIT_I: 0.05\n- Current ATC_RAT_PIT_D: 0.002\n\nFlight Conditions: Camera drone, smooth flying required",
+        "output": "Analysis:\n- Significant pitch error (18.3°) and overshoot (14%)\n- Visible oscillations indicate under-damped response\n- Camera drone needs smooth, not aggressive, response\n\nRecommendations:\n1. Reduce ATC_RAT_PIT_P: 0.12 → 0.08 (33% reduction)\n   Rationale: Smoother response for camera work\n2. Increase ATC_RAT_PIT_D: 0.002 → 0.006 (200% increase)\n   Rationale: Critical for damping oscillations\n3. Reduce ATC_ANG_PIT_P: 4.5 → 3.0\n   Rationale: Lower angle controller gain for smoothness"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend yaw tuning adjustments.",
+        "input": "Flight Log Analysis:\n- Yaw Oscillations: Persistent after commands\n- Yaw Settling Time: 3.5s (too slow)\n- Current ATC_RAT_YAW_P: 0.15\n- Current ATC_RAT_YAW_I: 0.05\n- Current ATC_RAT_YAW_D: 0.0\n\nFlight Conditions: FPV racer, fast maneuvers",
+        "output": "Analysis:\n- Yaw oscillations persist - insufficient damping\n- Slow settling time (3.5s) affects maneuverability\n- D term is zero - missing critical damping component\n\nRecommendations:\n1. Add ATC_RAT_YAW_D: 0.0 → 0.003\n   Rationale: D term essential for yaw damping\n2. Increase ATC_RAT_YAW_I: 0.05 → 0.08 (60% increase)\n   Rationale: Faster yaw correction\n3. Increase ATC_RAT_YAW_MAX: 3600 → 5400\n   Rationale: Allow faster yaw rate for racing"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend altitude control adjustments.",
+        "input": "Flight Log Analysis:\n- Altitude Oscillations: ±2.5m\n- Throttle Instability: High\n- Current PSC_POS_Z_P: 1.0\n- Current PSC_VEL_Z_P: 5.0\n- Current INS_GYRO_FILTER: 80Hz\n\nFlight Conditions: Indoor flight, optical flow positioning",
+        "output": "Analysis:\n- Large altitude oscillations (±2.5m) indicate gain too high\n- Throttle instability suggests position controller needs tuning\n- Indoor flight with optical flow requires different gains\n\nRecommendations:\n1. Reduce PSC_POS_Z_P: 1.0 → 0.5\n   Rationale: Indoor altitude control needs gentler response\n2. Reduce PSC_VEL_Z_P: 5.0 → 2.5\n   Rationale: Lower velocity gain for smoother throttle\n3. Increase INS_GYRO_FILTER: 80 → 100Hz\n   Rationale: More responsive control for indoor maneuvers"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend rate limit adjustments.",
+        "input": "Flight Log Analysis:\n- Max Roll Rate: 8500 deg/s (aggressive)\n- Control Inputs: Consistently at maximum\n- Current ATC_RAT_RLL_MAX: 7200\n- Current ATC_RAT_PIT_MAX: 7200\n\nFlight Conditions: Autonomous mission, waypoint navigation",
+        "output": "Analysis:\n- Roll rate frequently hitting maximum (8500 vs 7200 limit)\n- Controller saturating - cannot follow intended path precisely\n- Waypoint navigation requires smoother, more predictable response\n\nRecommendations:\n1. Increase ATC_RAT_RLL_MAX: 7200 → 9000\n   Rationale: Allow faster rate for mission requirements\n2. Increase ATC_RAT_PIT_MAX: 7200 → 9000\n   Rationale: Match roll rate capability\n3. Adjust angle limits for more aggressive maneuvers"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend motor configuration adjustments.",
+        "input": "Flight Log Analysis:\n- Motor Temperature: 85°C (critical)\n- Current MOT_SPIN_MIN: 0\n- Current MOT_SPIN_MAX: 9500\n- Flight Duration: 22 minutes\n- ESC Telemetry: All motors at 75°C\n\nFlight Conditions: Agricultural drone, heavy payload, hot climate",
+        "output": "Analysis:\n- Motor temperature (85°C) at critical level\n- Extended flight duration (22min) contributing to heat\n- Heavy payload + hot climate = thermal stress\n\nRecommendations:\n1. Set MOT_SPIN_MIN: 0 → 100\n   Rationale: Ensure motors always spin above minimum\n2. Add motor thermal protection:\n   - Consider adding MOT_TORQUE_BOOST: 0\n   - Set appropriate ESC heat management\n3. Recommend split flights (shorter sessions)\n4. Check: MOT_THST_VCC, MOT_PWM_MIN parameters"
+    }
+]

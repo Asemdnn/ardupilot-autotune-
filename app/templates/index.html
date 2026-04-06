@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArduPilot AI Tuner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 40px 0;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00d4ff, #7b2ff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            color: #8892b0;
+            font-size: 1.1rem;
+        }
+        
+        .upload-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 30px 0;
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .upload-section:hover {
+            border-color: #00d4ff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .upload-btn {
+            background: linear-gradient(90deg, #00d4ff, #7b2ff7);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.2s;
+        }
+        
+        .upload-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .context-input {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 500px;
+        }
+        
+        .context-input input {
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 1rem;
+        }
+        
+        .context-input input::placeholder {
+            color: #8892b0;
+        }
+        
+        .filename {
+            margin-top: 15px;
+            color: #00d4ff;
+            font-size: 0.9rem;
+        }
+        
+        .analyzing {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .results-section {
+            display: none;
+            margin-top: 30px;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .metric-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #00d4ff;
+        }
+        
+        .metric-label {
+            color: #8892b0;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        .recommendations {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 20px;
+        }
+        
+        .recommendations h2 {
+            color: #7b2ff7;
+            margin-bottom: 20px;
+        }
+        
+        .param-rec {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #00d4ff;
+        }
+        
+        .param-name {
+            font-weight: 700;
+            color: #00d4ff;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+        
+        .param-values {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .param-change {
+            color: #4ade80;
+            font-weight: 600;
+        }
+        
+        .param-reason {
+            color: #8892b0;
+            font-size: 0.9rem;
+        }
+        
+        .history-section {
+            margin-top: 40px;
+        }
+        
+        .history-section h2 {
+            color: #7b2ff7;
+            margin-bottom: 20px;
+        }
+        
+        .history-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .history-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .history-time {
+            color: #8892b0;
+            font-size: 0.8rem;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #8892b0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 ArduPilot AI Tuner</h1>
+            <p class="subtitle">Upload flight logs, get AI-powered parameter recommendations</p>
+        </header>
+        
+        <div class="upload-section" id="uploadSection">
+            <div class="upload-icon">📁</div>
+            <h2>Upload Flight Log</h2>
+            <p style="color: #8892b0; margin: 10px 0;">Drop your .bin or .log file here</p>
+            
+            <label class="upload-btn">
+                Choose File
+                <input type="file" class="file-input" id="fileInput" accept=".bin,.log">
+            </label>
+            
+            <div class="filename" id="filename"></div>
+            
+            <div class="context-input">
+                <input type="text" id="contextInput" placeholder="Drone type, use case (e.g., FPV racer, aerial photography)">
+            </div>
+        </div>
+        
+        <div class="analyzing" id="analyzing">
+            <div class="spinner"></div>
+            <h2>Analyzing Flight Log...</h2>
+            <p style="color: #8892b0;">Extracting metrics and generating recommendations</p>
+        </div>
+        
+        <div class="results-section" id="results">
+            <h2 style="color: #7b2ff7; margin-bottom: 20px;">📊 Flight Analysis</h2>
+            
+            <div class="metrics-grid" id="metricsGrid">
+                <!-- Metrics will be inserted here -->
+            </div>
+            
+            <div class="recommendations">
+                <h2>⚙️ Parameter Recommendations</h2>
+                <div id="recommendationsList">
+                    <!-- Recommendations will be inserted here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="history-section" id="history">
+            <h2>📜 Previous Analyses</h2>
+            <div id="historyList">
+                <!-- History will be inserted here -->
+            </div>
+        </div>
+        
+        <footer>
+            <p>ArduPilot AI Tuner - Iterate until optimal 🚁</p>
+        </footer>
+    </div>
+    
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const filename = document.getElementById('filename');
+        const uploadSection = document.getElementById('uploadSection');
+        const analyzing = document.getElementById('analyzing');
+        const results = document.getElementById('results');
+        const contextInput = document.getElementById('contextInput');
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                filename.textContent = e.target.files[0].name;
+                uploadLog(e.target.files[0]);
+            }
+        });
+        
+        async function uploadLog(file) {
+            uploadSection.style.display = 'none';
+            analyzing.style.display = 'block';
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('context', contextInput.value || '');
+            
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    displayResults(data);
+                } else {
+                    alert('Error: ' + (data.detail || 'Unknown error'));
+                    uploadSection.style.display = 'block';
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                uploadSection.style.display = 'block';
+            }
+            
+            analyzing.style.display = 'none';
+        }
+        
+        function displayResults(data) {
+            results.style.display = 'block';
+            
+            // Display metrics
+            const metricsGrid = document.getElementById('metricsGrid');
+            const metrics = data.metrics;
+            
+            metricsGrid.innerHTML = `
+                <div class="metric-card">
+                    <div class="metric-value">${metrics.max_roll_error?.toFixed(1) || 0}°</div>
+                    <div class="metric-label">Max Roll Error</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${metrics.max_pitch_error?.toFixed(1) || 0}°</div>
+                    <div class="metric-label">Max Pitch Error</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${metrics.overshoot_percent?.toFixed(1) || 0}%</div>
+                    <div class="metric-label">Overshoot</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${metrics.settling_time_sec?.toFixed(1) || 0}s</div>
+                    <div class="metric-label">Settling Time</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${metrics.vibration_g?.toFixed(2) || 0}g</div>
+                    <div class="metric-label">Vibration</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${metrics.max_roll_rate?.toFixed(0) || 0}</div>
+                    <div class="metric-label">Max Roll Rate</div>
+                </div>
+            `;
+            
+            // Display recommendations
+            const recList = document.getElementById('recommendationsList');
+            if (data.recommendations.length === 0) {
+                recList.innerHTML = '<p style="color: #4ade80;">🎉 No changes needed - parameters appear optimal!</p>';
+            } else {
+                recList.innerHTML = data.recommendations.map(rec => `
+                    <div class="param-rec">
+                        <div class="param-name">${rec.parameter}</div>
+                        <div class="param-values">
+                            <span>Current: <strong>${rec.current}</strong></span>
+                            <span>→ Recommended: <strong style="color: #4ade80;">${rec.recommended}</strong></span>
+                        </div>
+                        <div class="param-change">${rec.change}</div>
+                        <div class="param-reason">${rec.reason}</div>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        // Load history on page load
+        loadHistory();
+        
+        async function loadHistory() {
+            try {
+                const response = await fetch('/history');
+                const history = await response.json();
+                
+                const historyList = document.getElementById('historyList');
+                if (history.length === 0) {
+                    historyList.innerHTML = '<p style="color: #8892b0;">No previous analyses yet.</p>';
+                } else {
+                    historyList.innerHTML = history.map(item => `
+                        <div class="history-item">
+                            <div class="history-time">${item.timestamp}</div>
+                            <div>${item.recommendations.length} recommendations</div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading history:', error);
+            }
+        }
+    </script>
+</body>
+</html>
