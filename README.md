@@ -8,7 +8,7 @@ A closed-loop AI system that iteratively optimizes ArduPilot flight parameters b
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/ardupilot-ai-tuner.git
+git clone https://github.com/Asemdnn/ardupilot-autotune-.git
 cd ardupilot-ai-tuner
 
 # Install Python dependencies
@@ -82,7 +82,7 @@ brew install python3 git curl
 #### 1.2 Clone the Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/ardupilot-ai-tuner.git
+git clone https://github.com/Asemdnn/ardupilot-autotune-.git
 cd ardupilot-ai-tuner
 ```
 
