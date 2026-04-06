@@ -42,11 +42,231 @@
     {
         "instruction": "Analyze this flight log and recommend rate limit adjustments.",
         "input": "Flight Log Analysis:\n- Max Roll Rate: 8500 deg/s (aggressive)\n- Control Inputs: Consistently at maximum\n- Current ATC_RAT_RLL_MAX: 7200\n- Current ATC_RAT_PIT_MAX: 7200\n\nFlight Conditions: Autonomous mission, waypoint navigation",
-        "output": "Analysis:\n- Roll rate frequently hitting maximum (8500 vs 7200 limit)\n- Controller saturating - cannot follow intended path precisely\n- Waypoint navigation requires smoother, more predictable response\n\nRecommendations:\n1. Increase ATC_RAT_RLL_MAX: 7200 → 9000\n   Rationale: Allow faster rate for mission requirements\n2. Increase ATC_RAT_PIT_MAX: 7200 → 9000\n   Rationale: Match roll rate capability\n3. Adjust angle limits for more aggressive maneuvers"
+        "output": "Analysis:\n- Roll rate frequently hitting maximum (8500 vs 7200 limit)\n- Controller saturating - cannot follow intended path precisely\n- Waypoint navigation requires smoother, more predictable response\n\nRecommendations:\n1. Increase ATC_RAT_RLL_MAX: 7200 → 9000\n   Rationale: Allow faster rate for mission requirements\n2. Increase ATC_RAT_PIT_MAX: 7200 → 9000\n   Rationale: Match roll rate capability"
     },
     {
         "instruction": "Analyze this flight log and recommend motor configuration adjustments.",
         "input": "Flight Log Analysis:\n- Motor Temperature: 85°C (critical)\n- Current MOT_SPIN_MIN: 0\n- Current MOT_SPIN_MAX: 9500\n- Flight Duration: 22 minutes\n- ESC Telemetry: All motors at 75°C\n\nFlight Conditions: Agricultural drone, heavy payload, hot climate",
-        "output": "Analysis:\n- Motor temperature (85°C) at critical level\n- Extended flight duration (22min) contributing to heat\n- Heavy payload + hot climate = thermal stress\n\nRecommendations:\n1. Set MOT_SPIN_MIN: 0 → 100\n   Rationale: Ensure motors always spin above minimum\n2. Add motor thermal protection:\n   - Consider adding MOT_TORQUE_BOOST: 0\n   - Set appropriate ESC heat management\n3. Recommend split flights (shorter sessions)\n4. Check: MOT_THST_VCC, MOT_PWM_MIN parameters"
+        "output": "Analysis:\n- Motor temperature (85°C) at critical level\n- Extended flight duration (22min) contributing to heat\n- Heavy payload + hot climate = thermal stress\n\nRecommendations:\n1. Set MOT_SPIN_MIN: 0 → 100\n   Rationale: Ensure motors always spin above minimum\n2. Add motor thermal protection\n3. Recommend split flights (shorter sessions)"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend loiter tuning adjustments.",
+        "input": "Flight Log Analysis:\n- Position Overshoot: 8m\n- Drift Speed: 4.2 m/s\n- Current PSC_POS_X_P: 1.0\n- Current PSC_POS_Y_P: 1.0\n- Current PSC_VEL_X_P: 2.0\n\nFlight Conditions: Outdoor loiter, moderate wind",
+        "output": "Analysis:\n- Position overshoot (8m) indicates position gains too high\n- Drift speed (4.2 m/s) suggests insufficient position hold\n- Wind is affecting hover stability\n\nRecommendations:\n1. Reduce PSC_POS_X_P: 1.0 → 0.6 (40% reduction)\n   Rationale: Reduce overshoot in position control\n2. Reduce PSC_POS_Y_P: 1.0 → 0.6\n   Rationale: Match X and Y for symmetry\n3. Increase PSC_VEL_X_P: 2.0 → 3.0\n   Rationale: Stronger velocity control for wind rejection"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend RTL parameter adjustments.",
+        "input": "Flight Log Analysis:\n- RTL Speed: 12 m/s (too fast)\n- Landing Precision: ±15m\n- Current RTL_SPEED: 12\n- Current RTL_ALT: 100\n\nFlight Conditions: Open field, rural area",
+        "output": "Analysis:\n- RTL speed (12 m/s) is too fast for safe landing\n- Landing precision (±15m) needs improvement\n- Current altitude may be too high for approach\n\nRecommendations:\n1. Reduce RTL_SPEED: 12 → 5 m/s\n   Rationale: Slower speed for safer approach\n2. Reduce RTL_ALT: 100 → 60m\n   Rationale: Lower start altitude for better approach"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend battery/power parameter adjustments.",
+        "input": "Flight Log Analysis:\n- Voltage Sag: 3.8V under load\n- Current Draw: 85A (high)\n- Battery: 6S 5000mAh\n- Current MOT_BAT_VOLT_MAX: 52.2\n\nFlight Conditions: Heavy lift, aggressive maneuvers",
+        "output": "Analysis:\n- Voltage sag (3.8V) indicates battery stress\n- High current draw (85A) with heavy payload\n- Battery capacity may be insufficient for flight demands\n\nRecommendations:\n1. Set MOT_BAT_VOLT_MAX: 52.2 → 44.4 (6S max)\n   Rationale: Match actual battery voltage\n2. Set MOT_BAT_VOLT_MIN: 12.0 → 18.0\n   Rationale: Prevent low voltage cutoff issues\n3. Consider battery upgrade or reduce payload"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend land detector adjustments.",
+        "input": "Flight Log Analysis:\n- False Land Detections: 8 occurrences\n- Drop Detection: Multiple during descent\n- Current LAND_SLOPE: 0.0\n- Current LAND_SPEED: 20 cm/s\n\nFlight Conditions: Multi-copter, rough terrain",
+        "output": "Analysis:\n- False land detections (8) causing unwanted behavior\n- Drop detection triggering prematurely\n- Current settings not suitable for terrain\n\nRecommendations:\n1. Set LAND_SLOPE: 0.0 → 15\n   Rationale: Allow landing on slopes\n2. Reduce LAND_SPEED: 20 → 10 cm/s\n   Rationale: Slower descent for rough terrain"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend EKF filter adjustments.",
+        "input": "Flight Log Analysis:\n- EKF Position Variance: High\n- Vertical Drift: 2.1m over 5 minutes\n- GPS Horizontal Accuracy: 1.8m (degraded)\n- Current EK3_GPS_GAIN: 1.0\n\nFlight Conditions: Urban area, possible multipath",
+        "output": "Analysis:\n- High EKF variance indicates unreliable position estimate\n- Significant vertical drift (2.1m) over short period\n- GPS accuracy degraded - possible interference\n\nRecommendations:\n1. Reduce EK3_GPS_GAIN: 1.0 → 0.5\n   Rationale: Reduce GPS weight, trust IMU more\n2. Increase EK3_ABIAS_P: 0.01 → 0.02\n   Rationale: Allow faster bias correction\n3. Enable EKF check: EK3_CHECK: 1"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend autotune adjustments.",
+        "input": "Flight Log Analysis:\n- Autotune Completed: Yes\n- Roll P: 0.135\n- Roll D: 0.003\n- Post-Flight Oscillations: Present\n\nFlight Conditions: Post-autotune verification flight",
+        "output": "Analysis:\n- Autotune completed but post-flight oscillations detected\n- D term may be insufficient for smooth flight\n- Consider slight D increase for better damping\n\nRecommendations:\n1. Increase ATC_RAT_RLL_D: 0.003 → 0.005 (67% increase)\n   Rationale: Add more damping post-autotune\n2. Schedule follow-up flight to verify changes"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend compass/magnetometer adjustments.",
+        "input": "Flight Log Analysis:\n- Compass Interference: High\n- Heading Drift: 15° during flight\n- Current COMPASS_OFS_X: 50\n\nFlight Conditions: Near power lines, industrial area",
+        "output": "Analysis:\n- High compass interference causing heading drift (15°)\n- Magnetic interference from nearby infrastructure\n- Current offsets may need recalibration\n\nRecommendations:\n1. Perform compass calibration in current area\n2. Enable COMPASS_EXTERNAL: Verify if external compass available\n3. Consider GPS module location to reduce interference"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend flight mode tuning.",
+        "input": "Flight Log Analysis:\n- Mode Transitions: Jerky\n- Throttle Response: Delayed\n- Current ACRO_TRAINER: 0\n\nFlight Conditions: Beginner pilot, training mode",
+        "output": "Analysis:\n- Jerky mode transitions indicate control issues\n- Throttle delay suggests input smoothing needed\n- Training settings may not be optimized\n\nRecommendations:\n1. Set ACRO_TRAINER: 0 → 1\n   Rationale: Enable angle limiting for training\n2. Adjust STAB_TRAVEL_TIME: 100 → 150\n   Rationale: Slower response for beginners"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend gimbal parameter adjustments.",
+        "input": "Flight Log Analysis:\n- Gimbal Jitter: Visible\n- Gimbal Sync Errors: 12\n- Current MNT_STABILIZE: 1\n\nFlight Conditions: Camera platform, rough flight",
+        "output": "Analysis:\n- Gimbal jitter affecting video quality\n- Sync errors indicate communication issues\n- Gimbal settings not optimal for flight conditions\n\nRecommendations:\n1. Set MNT_STABILIZE: 1 → 0\n   Rationale: Disable stabilization for testing\n2. Check SERVO5 function for gimbal connection\n3. Adjust MNT_GYRO_GAIN based on results"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend terrain following adjustments.",
+        "input": "Flight Log Analysis:\n- Terrain Following Error: ±3m\n- Baro Altitude Drift: 1.5m\n- Current TERRAIN_ENABLE: 0\n\nFlight Conditions: Agricultural mapping, varying terrain",
+        "output": "Analysis:\n- Terrain following error (±3m) exceeds acceptable range\n- Barometric drift affecting altitude accuracy\n- Terrain following not enabled - consider enabling\n\nRecommendations:\n1. Enable TERRAIN_ENABLE: 0 → 1\n   Rationale: Enable terrain following for precision\n2. Set TERRAIN_LOOKAHEAD: 20 meters\n   Rationale: Look ahead for terrain changes"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend failsafe parameter adjustments.",
+        "input": "Flight Log Analysis:\n- RC Signal Loss: 3 occurrences\n- GPS Loss: 1 occurrence\n- Current FS_LONG_ACT: 0\n- Current FS_GCS_ENABL: 0\n\nFlight Conditions: Long range, beyond line of sight",
+        "output": "Analysis:\n- RC signal loss detected - failsafe needed\n- GPS loss occurred - need GPS failsafe\n- Failsafe not properly configured\n\nRecommendations:\n1. Set FS_LONG_ACT: 0 → 1 (RTL)\n   Rationale: Return home on signal loss\n2. Set FS_GCS_ENABL: 0 → 1\n   Rationale: Enable ground station failsafe\n3. Set FS_BATT_ENABLE: 1\n   Rationale: Enable battery failsafe"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend arming safety adjustments.",
+        "input": "Flight Log Analysis:\n- Pre-Arm Checks: Failing inconsistently\n- Arming Attempts: 15\n- Current ARMING_REQUIRE: 0\n\nFlight Conditions: New aircraft, initial setup",
+        "output": "Analysis:\n- Inconsistent pre-arm checks causing failed arming attempts (15)\n- ARMING_REQUIRE disabled - safety risk\n- Need to configure proper arming sequence\n\nRecommendations:\n1. Set ARMING_REQUIRE: 0 → 1\n   Rationale: Require stick sequence to arm\n2. Set ARMING_CHECK: 1 (keep full checks)\n   Rationale: Maintain safety checks\n3. Review FENCE_ENABLE settings"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend geofence adjustments.",
+        "input": "Flight Log Analysis:\n- Geofence Breaches: 2\n- Max Altitude: 145m (exceeds 120m limit)\n- Current FENCE_ENABLE: 0\n\nFlight Conditions: Recreational flying, near restricted area",
+        "output": "Analysis:\n- Geofence breaches (2) - altitude exceeded 120m limit\n- No geofence enabled - safety risk\n- Need proper geofence configuration\n\nRecommendations:\n1. Enable FENCE_ENABLE: 0 → 1\n   Rationale: Enable geofence protection\n2. Set FENCE_ALT_MAX: 120 meters\n   Rationale: Comply with altitude limits\n3. Set FENCE_RADIUS: 300 meters\n   Rationale: Set flight boundary"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend object avoidance adjustments.",
+        "input": "Flight Log Analysis:\n- Avoidance Events: 25\n- Mission Pauses: 8\n- Current OA_TYPE: 0\n\nFlight Conditions: Tree-rich environment, autonomous mission",
+        "output": "Analysis:\n- 25 avoidance events causing 8 mission pauses\n- Object avoidance not enabled\n- Need to configure OA for environment\n\nRecommendations:\n1. Set OA_TYPE: 0 → 1 (BendyRuler)\n   Rationale: Enable object avoidance\n2. Reduce OA_MARGIN: 2 → 1 meters\n   Rationale: Tighter obstacle clearance\n3. Verify proximity sensor connection"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend wind estimation adjustments.",
+        "input": "Flight Log Analysis:\n- Wind Estimate Error: 5 m/s\n- Position Drift: Consistent in one direction\n- Current EKF_WIND_VER: 0\n\nFlight Conditions: Coastal area, variable winds",
+        "output": "Analysis:\n- Wind estimate error (5 m/s) significantly off\n- Consistent drift direction suggests wind not estimated\n- EKF wind estimation not enabled\n\nRecommendations:\n1. Enable EKF_WIND_VER: 0 → 1\n   Rationale: Enable wind estimation\n2. Verify GPS is providing accurate velocity data"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend flight timer adjustments.",
+        "input": "Flight Log Analysis:\n- Flight Time: 28 minutes\n- Battery: 85% remaining\n- Current BATT_CAPACITY: 5000\n\nFlight Conditions: Endurance test, efficient flight",
+        "output": "Analysis:\n- Good flight time (28min) with 85% remaining\n- Battery capacity not properly configured\n- Could optimize for longer flights\n\nRecommendations:\n1. Set BATT_CAPACITY: 5000 (verify actual mAh)\n   Rationale: Accurate fuel monitoring\n2. Set BATT_WATT_MAX: 500\n   Rationale: Set appropriate power limit"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend sensor calibration adjustments.",
+        "input": "Flight Log Analysis:\n- ACC Calibration: Done 30 days ago\n- ACC Drift: Detected\n- Current INS_ACC2_ID: 0 (not configured)\n\nFlight Conditions: After crash, new sensors",
+        "output": "Analysis:\n- ACC calibration 30 days old with detected drift\n- Secondary IMU not configured - no redundancy\n- Recent crash may have affected calibration\n\nRecommendations:\n1. Perform 6-point ACC calibration\n2. Configure INS_ACC2_ID (enable second IMU)\n3. Verify GYRO calibration status"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend servo output adjustments.",
+        "input": "Flight Log Analysis:\n- Servo Noise: Present\n- Output Range: 980-2020us\n- Current RCOUT_MIN: 1000\n\nFlight Conditions: Modified frame, custom servos",
+        "output": "Analysis:\n- Servo noise affecting control quality\n- Output range slightly off from standard\n- Need to adjust for specific servo characteristics\n\nRecommendations:\n1. Set RCOUT_MIN: 1000 → 950us\n   Rationale: Match servo deadband\n2. Set RCOUT_MAX: 2000 → 2050us\n   Rationale: Full servo range"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend flight mode mixing adjustments.",
+        "input": "Flight Log Analysis:\n- Mode Switching: Delayed\n- Channel 5 Values: Inconsistent\n- Current MODE1: 0 (Stabilize)\n\nFlight Conditions: Switch testing, mode verification",
+        "output": "Analysis:\n- Mode switching delayed - RC channel issue\n- Channel 5 values inconsistent - calibration needed\n- Mode assignments look correct\n\nRecommendations:\n1. Verify RC5 input in Mission Planner\n2. Check MODE_CH: Should be 5\n3. Calibrate RC inputs for consistency"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend круиз control adjustments.",
+        "input": "Flight Log Analysis:\n- Cruise Speed: 18 m/s (target was 15)\n- Throttle Oscillations: ±15%\n- Current CRUISE_SPEED: 15\n\nFlight Conditions: Plane, long distance cruise",
+        "output": "Analysis:\n- Cruise speed (18 m/s) exceeds target (15 m/s)\n- Throttle oscillations causing inefficiency\n- Need speed control tuning\n\nRecommendations:\n1. Set CRUISE_SPEED: 15 → 12 m/s\n   Rationale: Match actual requirements\n2. Increase CRUISE_THROTTLE_MAX: 75%\n   Rationale: Allow higher throttle for speed control"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend TECS tuning for plane.",
+        "input": "Flight Log Analysis:\n- Altitude Overshoot: 15m\n- Speed Undershoot: 4 m/s\n- Current TECS_SPDWEIGHT: 1.0\n\nFlight Conditions: Fixed wing, mission planning",
+        "output": "Analysis:\n- Altitude overshoot (15m) indicates pitch control issues\n- Speed undershoot (4 m/s) suggests thrust problems\n- TECS parameters need adjustment\n\nRecommendations:\n1. Reduce TECS_SPDWEIGHT: 1.0 → 1.5\n   Rationale: Prioritize speed control\n2. Adjust TECS_PITCH_MAX: 25 → 20\n   Rationale: Reduce aggressive pitch"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend rover throttle adjustments.",
+        "input": "Flight Log Analysis:\n- Wheel Slip: 25%\n- Speed Overshoot: 3 m/s\n- Current CRUISE_SPEED: 5\n\nFlight Conditions: Rover, slippery surface",
+        "output": "Analysis:\n- Significant wheel slip (25%) on surface\n- Speed overshoot indicates throttle too aggressive\n- Need surface-specific tuning\n\nRecommendations:\n1. Reduce CRUISE_SPEED: 5 → 3 m/s\n   Rationale: Match surface conditions\n2. Enable wheel slip detection"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend boat stabilizer adjustments.",
+        "input": "Flight Log Analysis:\n- Roll Oscillations: ±12°\n- Stabilizer Corrections: Excessive\n- Current MNT_TYPE: 0\n\nFlight Conditions: Boat with gimbal, rough water",
+        "output": "Analysis:\n- Roll oscillations (±12°) too large\n- Excessive stabilizer corrections suggest gain issues\n- Gimbal not in correct mode\n\nRecommendations:\n1. Check MNT_TYPE: Should be 4 for boat\n2. Set RC6_FUNCTION: 0 → 4 (stabilizer roll)\n   Rationale: Enable roll stabilization\n3. Adjust stabilizer gains down"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend helicopter rotor adjustments.",
+        "input": "Flight Log Analysis:\n- Rotor RPM: 1800 (target was 2000)\n- Governor Not Engaged\n- Current HELI_GOV_ENABLE: 0\n\nFlight Conditions: Helicopter, manual flight",
+        "output": "Analysis:\n- Rotor RPM (1800) below target (2000)\n- Governor not enabled - manual control only\n- Need governor configuration\n\nRecommendations:\n1. Enable HELI_GOV_ENABLE: 0 → 1\n   Rationale: Enable rotor governor\n2. Set HELI_RCP_SC: 70%\n   Rationale: Set governor engagement point"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend VTOL transition adjustments.",
+        "input": "Flight Log Analysis:\n- Transition Time: 8s (should be 4s)\n- Motor Spool Issues: Present\n- Current VT_FW_Q_SPEED: 15\n\nFlight Conditions: VTOL, transition testing",
+        "output": "Analysis:\n- Transition time (8s) double expected (4s)\n- Motor spool issues during transition\n- VTOL parameters need optimization\n\nRecommendations:\n1. Increase VT_FW_Q_SPEED: 15 → 20 m/s\n   Rationale: Higher speed for cleaner transition\n2. Verify motor ramp rate during transition"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend sled/tow parameter adjustments.",
+        "input": "Flight Log Analysis:\n- Launch Detection: 2 failures\n- Tow Release: Delayed\n- Current TKOFF_SPEED: 0\n\nFlight Conditions: Glider with launch detection",
+        "output": "Analysis:\n- Launch detection failed twice\n- Tow release timing delayed\n- Takeoff parameters not configured\n\nRecommendations:\n1. Enable TKOFF_SPEED: 0 → 10 m/s\n   Rationale: Set launch detection speed\n2. Set TKOFF_PLIM: 100 (full throttle)\n   Rationale: Full power for takeoff"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend spraying system adjustments.",
+        "input": "Flight Log Analysis:\n- Spray Pattern: Inconsistent\n- Pump Cycles: 45 per minute\n- Current SPRAY_ENABLE: 0\n\nFlight Conditions: Agricultural drone, spraying mission",
+        "output": "Analysis:\n- Spray pattern inconsistent - coverage issues\n- Pump cycling rate inappropriate\n- Spraying system not enabled\n\nRecommendations:\n1. Enable SPRAY_ENABLE: 0 → 1\n   Rationale: Enable spraying system\n2. Set PUMP_RATE: 0 → 100 ml/min\n   Rationale: Set target flow rate"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend LED pattern adjustments.",
+        "input": "Flight Log Analysis:\n- LED Feedback: Not responding\n- Status Indicator: Off\n- Current LED_DEFAULT: 0\n\nFlight Conditions: Night flight, visual feedback needed",
+        "output": "Analysis:\n- LED not responding - no visual feedback\n- Status indicator off - can't verify state\n- LED not properly configured\n\nRecommendations:\n1. Check LED hardware connections\n2. Set LED_DEFAULT: 0 → 1 for default pattern\n3. Verify RC channel for LED control"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend buzzer/notification adjustments.",
+        "input": "Flight Log Analysis:\n- Audio Cues: Missing\n- Arming Tone: Not playing\n- Current BUZZ_ENABLE: 0\n\nFlight Conditions: Safety training, audible feedback",
+        "output": "Analysis:\n- Audio cues missing - no audible feedback\n- Arming tone not playing - safety concern\n- Buzzer functionality disabled\n\nRecommendations:\n1. Enable BUZZ_ENABLE: 0 → 1\n   Rationale: Enable buzzer for feedback\n2. Set BRD_SAFETY: 0 → 1 for safety switch\n   Rationale: Enable safety button"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend ADSB avoidance adjustments.",
+        "input": "Flight Log Analysis:\n- ADSB Vehicle Detected: 3\n- Avoidance Not Triggered\n- Current ADSB_ENABLE: 0\n\nFlight Conditions: Near airport, traffic awareness",
+        "output": "Analysis:\n- ADSB vehicle detected 3 times - potential traffic\n- Avoidance not triggered - not configured\n- ADSB not enabled for collision avoidance\n\nRecommendations:\n1. Enable ADSB_ENABLE: 0 → 1\n   Rationale: Enable ADSB for traffic avoidance\n2. Configure ADSB_RADAR_TYPE for sensor type"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend parachute deployment adjustments.",
+        "input": "Flight Log Analysis:\n- Parachute Trigger: Never tested\n- Release Mechanism: Not configured\n- Current CHUTE_ENABLE: 0\n\nFlight Conditions: Safety-critical, high-value payload",
+        "output": "Analysis:\n- Parachute never tested - untested safety system\n- Release mechanism not configured\n- Parachute functionality disabled\n\nRecommendations:\n1. Enable CHUTE_ENABLE: 0 → 1\n   Rationale: Enable parachute for safety\n2. Configure CHUTE_SERVO parameters\n3. Set trigger conditions (altitude, attitude)"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend EPM gripper adjustments.",
+        "input": "Flight Log Analysis:\n- Gripper Activation: Failures\n- Drop Detection: Triggered\n- Current EPM_ENABLE: 0\n\nFlight Conditions: Delivery drone, cargo release",
+        "output": "Analysis:\n- Gripper activation failures causing issues\n- Drop detection triggered unexpectedly\n- EPM not enabled\n\nRecommendations:\n1. Enable EPM_ENABLE: 0 → 1\n   Rationale: Enable gripper control\n2. Check EPM_SERVO parameters"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend companion computer adjustments.",
+        "input": "Flight Log Analysis:\n- MAVLink Messages: Delayed\n- Heartbeat Missed: 12\n- Current SERIAL0_BAUD: 115200\n\nFlight Conditions: Companion computer integration",
+        "output": "Analysis:\n- MAVLink delays and missed heartbeats (12)\n- VTX power not configured\n- Serial baud may need increase\n\nRecommendations:\n1. Increase SERIAL0_BAUD: 115200 → 921600\n   Rationale: Higher bandwidth for telemetry\n2. Enable MAVLINK_FTP for file transfer"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend CAN bus adjustments.",
+        "input": "Flight Log Analysis:\n- CAN Errors: 45\n- Node Dropouts: 3\n- Current CAN_D1_PROTOCOL: 1\n\nFlight Conditions: CAN GPS, CAN ESC integration",
+        "output": "Analysis:\n- High CAN errors (45) and node dropouts (3)\n- CAN protocol configured but experiencing issues\n- Need bitrate or termination check\n\nRecommendations:\n1. Check CAN bus termination (120 ohm)\n2. Verify CAN wire shielding"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend battery degradation adjustments.",
+        "input": "Flight Log Analysis:\n- Battery Voltage: 19.2V (6S nominal 22.8V)\n- Internal Resistance: 85mΩ (high)\n- Current BATT_FS_VOLTAGE: 19.0\n\nFlight Conditions: Aged battery, reduced flight time",
+        "output": "Analysis:\n- Voltage severely depressed (19.2V vs 22.8V nominal)\n- High internal resistance (85mΩ) indicates significant aging\n- Battery is in dangerous condition\n\nRecommendations:\n1. Set BATT_FS_VOLTAGE: 19.0 → 21.0 (3.5V per cell)\n   Rationale: Safer low voltage threshold\n2. Set BATT_FS_CAPACITY: 20\n   Rationale: Trigger RTL at 20% remaining\n3. Replace battery immediately - aged batteries are dangerous"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend hover performance adjustments.",
+        "input": "Flight Log Analysis:\n- Hover Throttle: 62%\n- Altitude Drift: ±1.5m\n- Current PSC_ACCZ_P: 1.0\n- Current PSC_ACCZ_I: 1.0\n\nFlight Conditions: Indoor hover test, altitude hold",
+        "output": "Analysis:\n- Hover throttle (62%) reasonable for aircraft\n- Altitude drift (±1.5m) indicates need for tuning\n- Position hold gains may need adjustment\n\nRecommendations:\n1. Increase PSC_ACCZ_P: 1.0 → 1.5\n   Rationale: Stronger altitude correction\n2. Increase PSC_ACCZ_I: 1.0 → 2.0\n   Rationale: Reduce steady-state altitude error\n3. Verify barometer for drift source"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend brake/damping adjustments.",
+        "input": "Flight Log Analysis:\n- Brake Overshoot: 5m\n- Drift After Brake: 8m\n- Current LOIT_BRAKE: 0\n\nFlight Conditions: Quick stop testing",
+        "output": "Analysis:\n- Brake overshoot (5m) - position overshoot\n- Significant drift after brake (8m) - insufficient damping\n- Brake parameters need tuning\n\nRecommendations:\n1. Enable LOIT_BRAKE: 0 → 1\n   Rationale: Enable aggressive braking\n2. Increase LOIT_BRAKE_D: 50 → 100\n   Rationale: More damping during braking"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend surface tracking adjustments.",
+        "input": "Flight Log Analysis:\n- Ground Proximity: 0.8m (too high)\n- Terrain Following: Overshoot ±1m\n- Current TERRAIN_ENABLE: 1\n\nFlight Conditions: Agriculture, tree canopy",
+        "output": "Analysis:\n- Ground proximity high (0.8m) - could be lower\n- Terrain following overshoot indicates gain issues\n- Rangefinder parameters need attention\n\nRecommendations:\n1. Set RNGFND_LAND: 0 → 10 cm/s\n   Rationale: Slow landing detection\n2. Adjust TERRAIN_GRID for resolution"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend payload drop adjustments.",
+        "input": "Flight Log Analysis:\n- Drop Accuracy: ±4m\n- Release Timing: Delayed\n- Current DO_DROP: Not configured\n\nFlight Conditions: Precision cargo delivery",
+        "output": "Analysis:\n- Drop accuracy (±4m) needs improvement\n- Release timing delayed affecting accuracy\n- Drop mechanism not configured\n\nRecommendations:\n1. Configure DO_DROP with drop location\n2. Set DO_PARAMS for timing offset"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend wind limit adjustments.",
+        "input": "Flight Log Analysis:\n- Max Wind During Flight: 18 m/s\n- Wind Estimation: 15 m/s\n- Current WPNAV_SPEED: 12\n\nFlight Conditions: Strong wind operation",
+        "output": "Analysis:\n- Wind (18 m/s) approaching operational limit\n- Mission speed may need reduction\n- Landing speed needs review for wind\n\nRecommendations:\n1. Set WPNAV_SPEED: 12 → 8 m/s in wind\n   Rationale: Slower for safety in wind\n2. Reduce LAND_SPEED: 50 → 30 cm/s\n   Rationale: Slower landing in wind"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend visual odometry adjustments.",
+        "input": "Flight Log Analysis:\n- VO Position Drift: 0.5m/min\n- VO Losses: 2\n- Current EK3_VIS_XY: 0\n\nFlight Conditions: Indoor, GPS-denied environment",
+        "output": "Analysis:\n- Visual odometry drift reasonable (0.5m/min)\n- 2 VO losses during flight - tracking issues\n- VO not enabled in EKF\n\nRecommendations:\n1. Enable EK3_VIS_XY: 0 → 1\n   Rationale: Use visual odometry in EKF\n2. Configure VISO_TYPE for sensor"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend mission planning adjustments.",
+        "input": "Flight Log Analysis:\n- Waypoint Arrival: Overshoot by 5m\n- Turn Radius: Too large\n- Current WPNAV_RADIUS: 2m\n- Current WPNAV_SPEED: 10\n\nFlight Conditions: Survey mission, precise waypoints",
+        "output": "Analysis:\n- Waypoint overshoot (5m) indicates speed or radius issue\n- Turn radius too large for survey lines\n- Need tighter path following\n\nRecommendations:\n1. Reduce WPNAV_RADIUS: 2m → 1m\n   Rationale: Tighter waypoint arrival\n2. Reduce WPNAV_SPEED: 10 → 6 m/s\n   Rationale: Slower for precision\n3. Enable WPNAV_SPEED_DN: For descent control"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend optical flow adjustments.",
+        "input": "Flight Log Analysis:\n- Optical Flow Quality: Low (35%)\n- Position Drift: 2.5m in 30s\n- Current OF_GAIN: 1.0\n\nFlight Conditions: Indoor, low light",
+        "output": "Analysis:\n- Optical flow quality low (35%) - not reliable\n- Significant position drift (2.5m in 30s)\n- OF_GAIN may be too low\n\nRecommendations:\n1. Increase OF_GAIN: 1.0 → 1.5\n   Rationale: Stronger optical flow influence\n2. Check lens cleanliness\n3. Increase lighting if possible"
+    },
+    {
+        "instruction": "Analyze this flight log and recommend radio link adjustments.",
+        "input": "Flight Log Analysis:\n- Telemetry RSSI: -85dB (weak)\n- Packet Loss: 15%\n- Current SR0_RAW: 100\n\nFlight Conditions: Long range, obstacle rich",
+        "output": "Analysis:\n- Telemetry RSSI weak (-85dB)\n- 15% packet loss is concerning\n- Data rate may be too high for signal\n\nRecommendations:\n1. Reduce SR0_RAW: 100 → 50 Hz\n   Rationale: Lower data rate for reliability\n2. Check antenna orientation\n3. Consider higher gain antenna"
     }
 ]
