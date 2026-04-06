@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ArduPilot AI Tuner</title>
+    <title>ArduPilot AI Tuner - Smart Parameter Optimization</title>
     <style>
         * {
             margin: 0;
@@ -12,226 +12,335 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
             color: #fff;
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
         }
         
         header {
             text-align: center;
-            padding: 40px 0;
+            padding: 30px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 30px;
         }
         
-        h1 {
+        header h1 {
             font-size: 2.5rem;
-            margin-bottom: 10px;
             background: linear-gradient(90deg, #00d4ff, #7b2ff7);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
         }
         
-        .subtitle {
+        header p {
             color: #8892b0;
             font-size: 1.1rem;
         }
         
-        .upload-section {
-            background: rgba(255, 255, 255, 0.05);
+        .card {
+            background: rgba(255,255,255,0.05);
             border-radius: 20px;
-            padding: 40px;
-            margin: 30px 0;
-            border: 2px dashed rgba(255, 255, 255, 0.1);
-            text-align: center;
-            transition: all 0.3s;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
         
-        .upload-section:hover {
+        .card h2 {
+            color: #7b2ff7;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .vehicle-select-grid, .drone-type-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .vehicle-card, .drone-type-option {
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            padding: 20px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .vehicle-card:hover, .drone-type-option:hover {
             border-color: #00d4ff;
-            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-3px);
+        }
+        
+        .vehicle-card.active {
+            border-color: #4ade80;
+            background: rgba(74, 222, 128, 0.1);
+        }
+        
+        .drone-type-option.selected {
+            border-color: #7b2ff7;
+            background: rgba(123, 47, 247, 0.2);
+        }
+        
+        .vehicle-card h3, .drone-type-option .name {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            color: #00d4ff;
+        }
+        
+        .vehicle-card p, .drone-type-option .desc {
+            font-size: 0.8rem;
+            color: #8892b0;
+        }
+        
+        .drone-type-option .icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #8892b0;
+            font-size: 0.9rem;
+        }
+        
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 1rem;
+        }
+        
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+        
+        .btn {
+            padding: 14px 30px;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, #00d4ff, #7b2ff7);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .btn-stop {
+            background: #f59e0b;
+            color: #000;
+        }
+        
+        .btn-stop:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .upload-area {
+            border: 2px dashed rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.05);
         }
         
         .upload-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
+            font-size: 3rem;
+            margin-bottom: 15px;
         }
         
         .file-input {
             display: none;
         }
         
-        .upload-btn {
-            background: linear-gradient(90deg, #00d4ff, #7b2ff7);
-            color: white;
-            padding: 15px 40px;
-            border-radius: 30px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: transform 0.2s;
-        }
-        
-        .upload-btn:hover {
-            transform: scale(1.05);
-        }
-        
-        .context-input {
-            margin-top: 20px;
-            width: 100%;
-            max-width: 500px;
-        }
-        
-        .context-input input {
-            width: 100%;
-            padding: 12px 20px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(0, 0, 0, 0.3);
-            color: #fff;
-            font-size: 1rem;
-        }
-        
-        .context-input input::placeholder {
-            color: #8892b0;
-        }
-        
-        .filename {
+        .selected-file {
             margin-top: 15px;
-            color: #00d4ff;
+            color: #4ade80;
             font-size: 0.9rem;
         }
         
-        .analyzing {
-            display: none;
-            text-align: center;
-            padding: 40px;
-        }
-        
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-top-color: #00d4ff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .results-section {
-            display: none;
-            margin-top: 30px;
-        }
+        .results-section { display: none; }
         
         .metrics-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
             margin: 20px 0;
         }
         
         .metric-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 15px;
             text-align: center;
         }
         
         .metric-value {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: 700;
             color: #00d4ff;
         }
         
         .metric-label {
             color: #8892b0;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             margin-top: 5px;
         }
         
-        .recommendations {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            padding: 30px;
-            margin-top: 20px;
-        }
-        
-        .recommendations h2 {
-            color: #7b2ff7;
-            margin-bottom: 20px;
-        }
-        
-        .param-rec {
-            background: rgba(0, 0, 0, 0.3);
+        .recommendation {
+            background: rgba(0,0,0,0.3);
             border-radius: 15px;
             padding: 20px;
             margin: 15px 0;
-            border-left: 4px solid #00d4ff;
+            border-left: 4px solid #4ade80;
         }
         
-        .param-name {
-            font-weight: 700;
+        .recommendation h4 {
             color: #00d4ff;
             font-size: 1.1rem;
             margin-bottom: 10px;
         }
         
-        .param-values {
+        .recommendation .values {
             display: flex;
             gap: 20px;
             margin-bottom: 10px;
+            flex-wrap: wrap;
         }
         
-        .param-change {
+        .recommendation .change {
             color: #4ade80;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+        
+        .recommendation .reason {
+            color: #8892b0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .training-panel {
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .training-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
             font-weight: 600;
         }
         
-        .param-reason {
-            color: #8892b0;
-            font-size: 0.9rem;
+        .status-idle { background: #6b7280; }
+        .status-running { background: #10b981; }
+        .status-stopped { background: #f59e0b; }
+        
+        .progress-bar {
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 15px 0;
         }
         
-        .history-section {
-            margin-top: 40px;
-        }
-        
-        .history-section h2 {
-            color: #7b2ff7;
-            margin-bottom: 20px;
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #7b2ff7);
+            transition: width 0.5s;
         }
         
         .history-item {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 15px;
             margin: 10px 0;
-            cursor: pointer;
-            transition: background 0.2s;
         }
         
-        .history-item:hover {
-            background: rgba(255, 255, 255, 0.1);
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
         }
         
-        .history-time {
-            color: #8892b0;
-            font-size: 0.8rem;
+        .history-time { color: #8892b0; font-size: 0.85rem; }
+        .history-recs { color: #4ade80; font-size: 0.9rem; }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
         }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
         
         footer {
             text-align: center;
-            padding: 40px;
+            padding: 30px;
             color: #8892b0;
         }
     </style>
@@ -240,179 +349,409 @@
     <div class="container">
         <header>
             <h1>🚀 ArduPilot AI Tuner</h1>
-            <p class="subtitle">Upload flight logs, get AI-powered parameter recommendations</p>
+            <p>Smart parameter optimization for your drone</p>
         </header>
         
-        <div class="upload-section" id="uploadSection">
-            <div class="upload-icon">📁</div>
-            <h2>Upload Flight Log</h2>
-            <p style="color: #8892b0; margin: 10px 0;">Drop your .bin or .log file here</p>
+        <!-- Step 1: Vehicle -->
+        <div class="card">
+            <h2>📋 Step 1: Select or Create Your Vehicle</h2>
             
-            <label class="upload-btn">
-                Choose File
-                <input type="file" class="file-input" id="fileInput" accept=".bin,.log">
-            </label>
-            
-            <div class="filename" id="filename"></div>
-            
-            <div class="context-input">
-                <input type="text" id="contextInput" placeholder="Drone type, use case (e.g., FPV racer, aerial photography)">
+            {% if vehicles and vehicles.length > 0 %}
+            <p style="color: #8892b0; margin-bottom: 15px;">Your saved vehicles:</p>
+            <div class="vehicle-select-grid" id="vehicleGrid">
+                {% for vehicle in vehicles %}
+                <div class="vehicle-card {% if active_vehicle and active_vehicle.id == vehicle.id %}active{% endif %}" 
+                     onclick="selectVehicle({{ vehicle.id }})">
+                    <h3>{{ vehicle.name }}</h3>
+                    <p>{{ vehicle.drone_type_name }}</p>
+                    <p>✈️ {{ vehicle.flight_count or 0 }} flights</p>
+                </div>
+                {% endfor %}
             </div>
-        </div>
-        
-        <div class="analyzing" id="analyzing">
-            <div class="spinner"></div>
-            <h2>Analyzing Flight Log...</h2>
-            <p style="color: #8892b0;">Extracting metrics and generating recommendations</p>
-        </div>
-        
-        <div class="results-section" id="results">
-            <h2 style="color: #7b2ff7; margin-bottom: 20px;">📊 Flight Analysis</h2>
+            {% endif %}
             
-            <div class="metrics-grid" id="metricsGrid">
-                <!-- Metrics will be inserted here -->
+            <h3 style="color: #00d4ff; margin: 20px 0 15px;">Create New Vehicle</h3>
+            
+            <div class="form-group">
+                <label>Vehicle Name</label>
+                <input type="text" id="vehicleName" placeholder="e.g., My FPV Racer">
             </div>
             
-            <div class="recommendations">
-                <h2>⚙️ Parameter Recommendations</h2>
-                <div id="recommendationsList">
-                    <!-- Recommendations will be inserted here -->
+            <div class="form-group">
+                <label>Drone Type</label>
+                <div class="drone-type-grid" id="droneTypeGrid">
+                    <div class="drone-type-option" data-type="fpv_racing" onclick="selectDroneType(this)">
+                        <div class="icon">🏎️</div>
+                        <div class="name">FPV Racing</div>
+                    </div>
+                    <div class="drone-type-option" data-type="cinematic" onclick="selectDroneType(this)">
+                        <div class="icon">🎬</div>
+                        <div class="name">Cinematic</div>
+                    </div>
+                    <div class="drone-type-option" data-type="survey" onclick="selectDroneType(this)">
+                        <div class="icon">🗺️</div>
+                        <div class="name">Survey</div>
+                    </div>
+                    <div class="drone-type-option" data-type="agricultural" onclick="selectDroneType(this)">
+                        <div class="icon">🌾</div>
+                        <div class="name">Agricultural</div>
+                    </div>
+                    <div class="drone-type-option" data-type="heavy_lift" onclick="selectDroneType(this)">
+                        <div class="icon">🏗️</div>
+                        <div class="name">Heavy Lift</div>
+                    </div>
+                    <div class="drone-type-option" data-type="vtol" onclick="selectDroneType(this)">
+                        <div class="icon">🛸</div>
+                        <div class="name">VTOL</div>
+                    </div>
+                    <div class="drone-type-option" data-type="fixed_wing" onclick="selectDroneType(this)">
+                        <div class="icon">✈️</div>
+                        <div class="name">Fixed Wing</div>
+                    </div>
+                    <div class="drone-type-option" data-type="rover" onclick="selectDroneType(this)">
+                        <div class="icon">🚗</div>
+                        <div class="name">Rover</div>
+                    </div>
+                    <div class="drone-type-option" data-type="helicopter" onclick="selectDroneType(this)">
+                        <div class="icon">🚁</div>
+                        <div class="name">Helicopter</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Current Parameters (Optional)</label>
+                <textarea id="currentParams" placeholder="e.g., ATC_RAT_RLL_P=0.12, ATC_RAT_RLL_I=0.05"></textarea>
+            </div>
+            
+            <button class="btn btn-primary" onclick="createVehicle()">
+                ➕ Create Vehicle
+            </button>
+        </div>
+        
+        <!-- Active Vehicle & Upload -->
+        <div id="activeVehicleSection" style="display: none;">
+            <div class="card" style="background: rgba(74, 222, 128, 0.1); border-color: #4ade80;">
+                <h2 style="color: #4ade80;">✅ Active: <span id="activeVehicleName"></span></h2>
+                <p id="activeVehicleType" style="color: #8892b0;"></p>
+            </div>
+            
+            <div class="card">
+                <h2>📤 Step 2: Upload Flight Log (.bin or .log)</h2>
+                
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">📁</div>
+                    <h3>Click to select your flight log file</h3>
+                    <p style="color: #8892b0; margin-top: 10px;">Supports .bin and .log files</p>
+                    <input type="file" class="file-input" id="fileInput" accept=".bin,.log" onchange="handleFileSelect(event)">
+                    <div class="selected-file" id="selectedFile"></div>
+                </div>
+                
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>Flight Notes (Optional - describe issues you noticed)</label>
+                    <textarea id="flightNotes" placeholder="e.g., Wobble during fast turns, overshoot on landing"></textarea>
+                </div>
+                
+                <button class="btn btn-primary" id="analyzeBtn" onclick="analyzeLog()" disabled>
+                    🔍 Analyze & Get Recommendations
+                </button>
+            </div>
+            
+            <div class="card" id="loadingSection" style="display: none;">
+                <div class="spinner"></div>
+                <h3 style="text-align: center;">Analyzing your flight log...</h3>
+            </div>
+            
+            <div class="results-section" id="resultsSection">
+                <div class="card">
+                    <h2>📊 Flight Analysis Results</h2>
+                    <div class="metrics-grid" id="metricsGrid"></div>
+                </div>
+                
+                <div class="card">
+                    <h2>⚙️ Recommended Parameter Changes</h2>
+                    <div id="recommendationsList"></div>
+                </div>
+                
+                <button class="btn btn-secondary" onclick="clearResults()">
+                    ➕ Upload Another Log
+                </button>
+            </div>
+            
+            <div class="card">
+                <h2>📜 Flight History</h2>
+                <div id="historyList">
+                    <p style="color: #8892b0;">No flights analyzed yet.</p>
                 </div>
             </div>
         </div>
         
-        <div class="history-section" id="history">
-            <h2>📜 Previous Analyses</h2>
-            <div id="historyList">
-                <!-- History will be inserted here -->
+        <!-- Training -->
+        <div class="card">
+            <h2>🧠 AI Model Training</h2>
+            <p style="color: #8892b0; margin-bottom: 15px;">
+                Fine-tune the AI to better understand your drone type.
+            </p>
+            
+            <div class="training-panel">
+                <div class="training-status">
+                    <span class="status-badge status-idle" id="trainingStatus">IDLE</span>
+                    <span id="trainingInfo">No training in progress</span>
+                </div>
+                
+                <div class="form-group">
+                    <label>Model</label>
+                    <select id="trainModel">
+                        <option value="qwen2.5:7b">Qwen2.5 7B (Fast)</option>
+                        <option value="qwen2.5:14b">Qwen2.5 14B (Better)</option>
+                        <option value="qwen2.5:72b">Qwen2.5 72B (Best - needs 24GB VRAM)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Epochs</label>
+                    <select id="trainEpochs">
+                        <option value="1">1 Epoch (Quick)</option>
+                        <option value="3" selected>3 Epochs (Recommended)</option>
+                        <option value="5">5 Epochs (Thorough)</option>
+                    </select>
+                </div>
+                
+                <div style="display: flex; gap: 15px; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="startTraining()">
+                        ▶️ Start Training
+                    </button>
+                    <button class="btn btn-stop" onclick="stopTraining()" id="stopBtn" disabled>
+                        ⏹️ Stop
+                    </button>
+                </div>
+                
+                <div class="progress-bar" id="progressBar" style="display: none;">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
             </div>
         </div>
         
         <footer>
             <p>ArduPilot AI Tuner - Iterate until optimal 🚁</p>
+            <p style="font-size: 0.85rem; margin-top: 10px;">
+                Upload logs → Get recommendations → Apply → Fly again → Repeat!
+            </p>
         </footer>
     </div>
     
     <script>
-        const fileInput = document.getElementById('fileInput');
-        const filename = document.getElementById('filename');
-        const uploadSection = document.getElementById('uploadSection');
-        const analyzing = document.getElementById('analyzing');
-        const results = document.getElementById('results');
-        const contextInput = document.getElementById('contextInput');
+        let selectedDroneType = null;
+        let selectedFile = null;
+        let currentJobId = null;
         
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                filename.textContent = e.target.files[0].name;
-                uploadLog(e.target.files[0]);
-            }
+        document.addEventListener('DOMContentLoaded', function() {
+            checkActiveVehicle();
+            loadHistory();
+            startTrainingStatusPoll();
         });
         
-        async function uploadLog(file) {
-            uploadSection.style.display = 'none';
-            analyzing.style.display = 'block';
+        async function checkActiveVehicle() {
+            const response = await fetch('/vehicle/current');
+            const data = await response.json();
+            
+            if (data.status !== 'no_vehicle') {
+                document.getElementById('activeVehicleSection').style.display = 'block';
+                document.getElementById('activeVehicleName').textContent = data.name;
+                document.getElementById('activeVehicleType').textContent = 
+                    `${data.drone_type_name} • ${data.flight_count || 0} flights analyzed`;
+            }
+        }
+        
+        function selectDroneType(element) {
+            document.querySelectorAll('.drone-type-option').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedDroneType = element.dataset.type;
+        }
+        
+        async function createVehicle() {
+            const name = document.getElementById('vehicleName').value.trim();
+            const params = document.getElementById('currentParams').value;
+            
+            if (!name) { alert('Please enter a vehicle name'); return; }
+            if (!selectedDroneType) { alert('Please select a drone type'); return; }
             
             const formData = new FormData();
-            formData.append('file', file);
-            formData.append('context', contextInput.value || '');
+            formData.append('name', name);
+            formData.append('drone_type', selectedDroneType);
+            formData.append('current_params', params);
+            
+            const response = await fetch('/vehicle/create', { method: 'POST', body: formData });
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                document.getElementById('activeVehicleSection').style.display = 'block';
+                document.getElementById('activeVehicleName').textContent = data.vehicle.name;
+                document.getElementById('activeVehicleType').textContent = 
+                    `${data.vehicle.drone_type_name} • 0 flights analyzed`;
+                document.getElementById('vehicleName').value = '';
+                document.getElementById('currentParams').value = '';
+                document.querySelectorAll('.drone-type-option').forEach(el => el.classList.remove('selected'));
+            }
+        }
+        
+        async function selectVehicle(vehicleId) {
+            const response = await fetch('/vehicle/select', {
+                method: 'POST',
+                body: new FormData().append('vehicle_id', vehicleId)
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                document.getElementById('activeVehicleSection').style.display = 'block';
+                document.getElementById('activeVehicleName').textContent = data.vehicle.name;
+                document.getElementById('activeVehicleType').textContent = 
+                    `${data.vehicle.drone_type_name} • ${data.vehicle.flight_count || 0} flights analyzed`;
+            }
+        }
+        
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                selectedFile = file;
+                document.getElementById('selectedFile').textContent = '✓ ' + file.name;
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+        }
+        
+        async function analyzeLog() {
+            if (!selectedFile) { alert('Please select a flight log file'); return; }
+            
+            document.getElementById('loadingSection').style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'none';
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('notes', document.getElementById('flightNotes').value || '');
             
             try {
-                const response = await fetch('/analyze', {
-                    method: 'POST',
-                    body: formData
-                });
-                
+                const response = await fetch('/analyze', { method: 'POST', body: formData });
                 const data = await response.json();
                 
                 if (data.status === 'success') {
                     displayResults(data);
                 } else {
                     alert('Error: ' + (data.detail || 'Unknown error'));
-                    uploadSection.style.display = 'block';
                 }
             } catch (error) {
                 alert('Error: ' + error.message);
-                uploadSection.style.display = 'block';
             }
             
-            analyzing.style.display = 'none';
+            document.getElementById('loadingSection').style.display = 'none';
         }
         
         function displayResults(data) {
-            results.style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'block';
             
-            // Display metrics
-            const metricsGrid = document.getElementById('metricsGrid');
-            const metrics = data.metrics;
-            
-            metricsGrid.innerHTML = `
-                <div class="metric-card">
-                    <div class="metric-value">${metrics.max_roll_error?.toFixed(1) || 0}°</div>
-                    <div class="metric-label">Max Roll Error</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value">${metrics.max_pitch_error?.toFixed(1) || 0}°</div>
-                    <div class="metric-label">Max Pitch Error</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value">${metrics.overshoot_percent?.toFixed(1) || 0}%</div>
-                    <div class="metric-label">Overshoot</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value">${metrics.settling_time_sec?.toFixed(1) || 0}s</div>
-                    <div class="metric-label">Settling Time</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value">${metrics.vibration_g?.toFixed(2) || 0}g</div>
-                    <div class="metric-label">Vibration</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value">${metrics.max_roll_rate?.toFixed(0) || 0}</div>
-                    <div class="metric-label">Max Roll Rate</div>
-                </div>
+            const m = data.metrics;
+            document.getElementById('metricsGrid').innerHTML = `
+                <div class="metric-card"><div class="metric-value">${m.max_roll_error?.toFixed(1) || 0}°</div><div class="metric-label">Roll Error</div></div>
+                <div class="metric-card"><div class="metric-value">${m.max_pitch_error?.toFixed(1) || 0}°</div><div class="metric-label">Pitch Error</div></div>
+                <div class="metric-card"><div class="metric-value">${m.overshoot_percent?.toFixed(1) || 0}%</div><div class="metric-label">Overshoot</div></div>
+                <div class="metric-card"><div class="metric-value">${m.settling_time_sec?.toFixed(1) || 0}s</div><div class="metric-label">Settling</div></div>
+                <div class="metric-card"><div class="metric-value">${m.vibration_g?.toFixed(2) || 0}g</div><div class="metric-label">Vibration</div></div>
             `;
             
-            // Display recommendations
             const recList = document.getElementById('recommendationsList');
             if (data.recommendations.length === 0) {
-                recList.innerHTML = '<p style="color: #4ade80;">🎉 No changes needed - parameters appear optimal!</p>';
+                recList.innerHTML = '<p style="color: #4ade80; text-align: center; padding: 20px;">🎉 Parameters are already optimal!</p>';
             } else {
                 recList.innerHTML = data.recommendations.map(rec => `
-                    <div class="param-rec">
-                        <div class="param-name">${rec.parameter}</div>
-                        <div class="param-values">
+                    <div class="recommendation">
+                        <h4>${rec.parameter}</h4>
+                        <div class="values">
                             <span>Current: <strong>${rec.current}</strong></span>
-                            <span>→ Recommended: <strong style="color: #4ade80;">${rec.recommended}</strong></span>
+                            <span>→</span>
+                            <span style="color: #4ade80;">Recommended: <strong>${rec.recommended}</strong></span>
                         </div>
-                        <div class="param-change">${rec.change}</div>
-                        <div class="param-reason">${rec.reason}</div>
+                        <div class="change">${rec.change}</div>
+                        <div class="reason">${rec.reason}</div>
                     </div>
                 `).join('');
             }
+            
+            loadHistory();
         }
         
-        // Load history on page load
-        loadHistory();
+        function clearResults() {
+            selectedFile = null;
+            document.getElementById('selectedFile').textContent = '';
+            document.getElementById('fileInput').value = '';
+            document.getElementById('analyzeBtn').disabled = true;
+            document.getElementById('flightNotes').value = '';
+            document.getElementById('resultsSection').style.display = 'none';
+        }
         
         async function loadHistory() {
             try {
                 const response = await fetch('/history');
                 const history = await response.json();
+                const list = document.getElementById('historyList');
                 
-                const historyList = document.getElementById('historyList');
                 if (history.length === 0) {
-                    historyList.innerHTML = '<p style="color: #8892b0;">No previous analyses yet.</p>';
+                    list.innerHTML = '<p style="color: #8892b0;">No flights analyzed yet.</p>';
                 } else {
-                    historyList.innerHTML = history.map(item => `
+                    list.innerHTML = history.slice(0, 5).map(item => `
                         <div class="history-item">
-                            <div class="history-time">${item.timestamp}</div>
-                            <div>${item.recommendations.length} recommendations</div>
+                            <div class="history-header">
+                                <span class="history-time">${item.timestamp}</span>
+                                <span class="history-recs">${item.recommendations.length} recommendations</span>
+                            </div>
+                            <div style="color: #8892b0; font-size: 0.9rem;">${item.vehicle_name} • ${item.drone_type}</div>
                         </div>
                     `).join('');
                 }
-            } catch (error) {
-                console.error('Error loading history:', error);
+            } catch (e) { console.error(e); }
+        }
+        
+        async function startTraining() {
+            const model = document.getElementById('trainModel').value;
+            const epochs = parseInt(document.getElementById('trainEpochs').value);
+            
+            const formData = new FormData();
+            formData.append('model_name', model);
+            formData.append('epochs', epochs);
+            
+            const response = await fetch('/training/start', { method: 'POST', body: formData });
+            const data = await response.json();
+            
+            if (data.status === 'started') {
+                currentJobId = data.job_id;
+                document.getElementById('trainingStatus').textContent = 'RUNNING';
+                document.getElementById('trainingStatus').className = 'status-badge status-running';
+                document.getElementById('trainingInfo').textContent = `Training ${model} for ${epochs} epochs...`;
+                document.getElementById('stopBtn').disabled = false;
             }
+        }
+        
+        async function stopTraining() {
+            if (!currentJobId) return;
+            await fetch('/training/stop', { method: 'POST', body: new FormData().append('job_id', currentJobId) });
+            document.getElementById('trainingStatus').textContent = 'STOPPED';
+            document.getElementById('trainingStatus').className = 'status-badge status-stopped';
+            document.getElementById('trainingInfo').textContent = 'Training stopped by user';
+            document.getElementById('stopBtn').disabled = true;
+        }
+        
+        function startTrainingStatusPoll() {
+            setInterval(async () => {
+                if (!currentJobId) return;
+                try {
+                    const response = await fetch(`/training/status?job_id=${currentJobId}`);
+                    const data = await response.json();
+                    if (data.status === 'running') {
+                        document.getElementById('progressBar').style.display = 'block';
+                        document.getElementById('progressFill').style.width = (data.progress || 0) + '%';
+                    } else if (data.status === 'completed' || data.status === 'stopped') {
+                        document.getElementById('progressFill').style.width = '100%';
+                        document.getElementById('stopBtn').disabled = true;
+                    }
+                } catch (e) {}
+            }, 3000);
         }
     </script>
 </body>
