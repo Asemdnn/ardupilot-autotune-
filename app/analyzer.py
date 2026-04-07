@@ -109,7 +109,7 @@ def analyze_flight_log(log_path: str) -> Dict:
         if pitch_rates:
             metrics['max_pitch_rate'] = max(pitch_rates)
         if vibrations:
-            metrics['vibration_g'] = max(vibrations)
+            metrics['vibration_g'] = max(vibratures)
         if voltages:
             metrics['battery_voltage_min'] = min(voltages)
         if cpu_loads:

@@ -356,7 +356,7 @@
         <div class="card">
             <h2>📋 Step 1: Select or Create Your Vehicle</h2>
             
-            {% if vehicles and vehicles|length > 0 %}
+            {% if vehicles and vehicles.length > 0 %}
             <p style="color: #8892b0; margin-bottom: 15px;">Your saved vehicles:</p>
             <div class="vehicle-select-grid" id="vehicleGrid">
                 {% for vehicle in vehicles %}
@@ -596,11 +596,9 @@
         }
         
         async function selectVehicle(vehicleId) {
-            const formData = new FormData();
-            formData.append('vehicle_id', vehicleId);
             const response = await fetch('/vehicle/select', {
                 method: 'POST',
-                body: formData
+                body: new FormData().append('vehicle_id', vehicleId)
             });
             const data = await response.json();
             if (data.status === 'success') {
@@ -732,9 +730,7 @@
         
         async function stopTraining() {
             if (!currentJobId) return;
-            const formData = new FormData();
-            formData.append('job_id', currentJobId);
-            await fetch('/training/stop', { method: 'POST', body: formData });
+            await fetch('/training/stop', { method: 'POST', body: new FormData().append('job_id', currentJobId) });
             document.getElementById('trainingStatus').textContent = 'STOPPED';
             document.getElementById('trainingStatus').className = 'status-badge status-stopped';
             document.getElementById('trainingInfo').textContent = 'Training stopped by user';
