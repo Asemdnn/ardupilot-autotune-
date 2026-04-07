@@ -20,17 +20,18 @@ from fastapi import Request
 from analyzer import analyze_flight_log, extract_key_metrics
 from parameters import ARDUPILOT_PARAMETERS, validate_parameter, format_recommendations
 
-# Configuration
-DATA_DIR = Path("data")
+# Configuration - use paths relative to project root for robustness
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = BASE_DIR / "data"
 VEHICLES_FILE = DATA_DIR / "vehicles.json"
 LOGS_DIR = DATA_DIR / "logs"
 OUTPUTS_DIR = DATA_DIR / "outputs"
 TRAINING_DIR = DATA_DIR / "training_jobs"
 
 # Ensure directories exist
-LOGS_DIR.mkdir(exist_ok=True)
-OUTPUTS_DIR.mkdir(exist_ok=True)
-TRAINING_DIR.mkdir(exist_ok=True)
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+TRAINING_DIR.mkdir(parents=True, exist_ok=True)
 
 
 class DroneType(str, Enum):
@@ -145,12 +146,15 @@ async def home(request: Request):
     if current_vehicle:
         active_vehicle = current_vehicle
     
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "vehicles": vehicles,
-        "active_vehicle": active_vehicle,
-        "drone_types": DRONE_TYPE_INFO
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={
+            "vehicles": vehicles,
+            "active_vehicle": active_vehicle,
+            "drone_types": DRONE_TYPE_INFO
+        }
+    )
 
 
 @app.post("/vehicle/create")
