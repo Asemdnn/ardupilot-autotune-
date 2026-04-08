@@ -356,14 +356,17 @@
         <div class="card">
             <h2>📋 Step 1: Select or Create Your Vehicle</h2>
             
-            {% if vehicles and vehicles.length > 0 %}
+            {% if vehicles and vehicles|length > 0 %}
             <p style="color: #8892b0; margin-bottom: 15px;">Your saved vehicles:</p>
             <div class="vehicle-select-grid" id="vehicleGrid">
                 {% for vehicle in vehicles %}
                 <div class="vehicle-card {% if active_vehicle and active_vehicle.id == vehicle.id %}active{% endif %}" 
                      onclick="selectVehicle({{ vehicle.id }})">
-                    <h3>{{ vehicle.name }}</h3>
-                    <p>{{ vehicle.drone_type_name }}</p>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <h3 style="margin-bottom: 0;">{{ vehicle.name }}</h3>
+                        <span onclick="event.stopPropagation(); deleteVehicle({{ vehicle.id }})" style="cursor: pointer; opacity: 0.7;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7" title="Delete Vehicle">🗑️</span>
+                    </div>
+                    <p style="margin-top: 5px;">{{ vehicle.drone_type_name }}</p>
                     <p>✈️ {{ vehicle.flight_count or 0 }} flights</p>
                 </div>
                 {% endfor %}
@@ -569,6 +572,23 @@
             selectedDroneType = element.dataset.type;
         }
         
+        async function deleteVehicle(vehicleId) {
+            if (!confirm('Are you sure you want to delete this vehicle?')) return;
+            
+            const formData = new FormData();
+            formData.append('vehicle_id', vehicleId);
+            
+            try {
+                const response = await fetch('/vehicle/delete', { method: 'POST', body: formData });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    window.location.reload();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        
         async function createVehicle() {
             const name = document.getElementById('vehicleName').value.trim();
             const params = document.getElementById('currentParams').value;
@@ -589,23 +609,23 @@
                 document.getElementById('activeVehicleName').textContent = data.vehicle.name;
                 document.getElementById('activeVehicleType').textContent = 
                     `${data.vehicle.drone_type_name} • 0 flights analyzed`;
-                document.getElementById('vehicleName').value = '';
-                document.getElementById('currentParams').value = '';
-                document.querySelectorAll('.drone-type-option').forEach(el => el.classList.remove('selected'));
+                
+                // Reload to display the new vehicle in the list and set it as active
+                window.location.reload();
             }
         }
         
         async function selectVehicle(vehicleId) {
+            const formData = new FormData();
+            formData.append('vehicle_id', vehicleId);
             const response = await fetch('/vehicle/select', {
                 method: 'POST',
-                body: new FormData().append('vehicle_id', vehicleId)
+                body: formData
             });
             const data = await response.json();
             if (data.status === 'success') {
-                document.getElementById('activeVehicleSection').style.display = 'block';
-                document.getElementById('activeVehicleName').textContent = data.vehicle.name;
-                document.getElementById('activeVehicleType').textContent = 
-                    `${data.vehicle.drone_type_name} • ${data.vehicle.flight_count || 0} flights analyzed`;
+                // Reload to highlight the newly selected vehicle
+                window.location.reload();
             }
         }
         
@@ -730,7 +750,9 @@
         
         async function stopTraining() {
             if (!currentJobId) return;
-            await fetch('/training/stop', { method: 'POST', body: new FormData().append('job_id', currentJobId) });
+            const formData = new FormData();
+            formData.append('job_id', currentJobId);
+            await fetch('/training/stop', { method: 'POST', body: formData });
             document.getElementById('trainingStatus').textContent = 'STOPPED';
             document.getElementById('trainingStatus').className = 'status-badge status-stopped';
             document.getElementById('trainingInfo').textContent = 'Training stopped by user';
