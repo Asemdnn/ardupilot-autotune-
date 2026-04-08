@@ -9,8 +9,9 @@ from pathlib import Path
 from typing import Optional, List, Dict
 from datetime import datetime
 from enum import Enum
+import asyncio
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -131,7 +132,7 @@ app = FastAPI(
 )
 
 # Setup templates
-templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
+templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -145,12 +146,15 @@ async def home(request: Request):
     if current_vehicle:
         active_vehicle = current_vehicle
     
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "vehicles": vehicles,
-        "active_vehicle": active_vehicle,
-        "drone_types": DRONE_TYPE_INFO
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={
+            "vehicles": vehicles,
+            "active_vehicle": active_vehicle,
+            "drone_types": DRONE_TYPE_INFO
+        }
+    )
 
 
 @app.post("/vehicle/create")
@@ -168,8 +172,9 @@ async def create_vehicle(
     # Get drone type info
     type_info = DRONE_TYPE_INFO.get(drone_type, DRONE_TYPE_INFO["fpv_racing"])
     
+    new_id = max((v["id"] for v in vehicles), default=0) + 1
     new_vehicle = {
-        "id": len(vehicles) + 1,
+        "id": new_id,
         "name": name,
         "drone_type": drone_type,
         "drone_type_name": type_info["name"],
@@ -501,8 +506,31 @@ async def validate_param(
 
 
 # Training endpoints
+async def simulate_training(job_id: str, epochs: int):
+    """Simulate a background training process with progress updates."""
+    global training_jobs
+    
+    # Simulate a brief startup phase
+    await asyncio.sleep(1)
+    
+    if job_id in training_jobs and training_jobs[job_id]["status"] != "stopped":
+        training_jobs[job_id]["status"] = "running"
+        
+        total_steps = epochs * 5  # Each epoch takes 5 seconds
+        for i in range(1, total_steps + 1):
+            if job_id not in training_jobs or training_jobs[job_id]["status"] == "stopped":
+                break
+                
+            await asyncio.sleep(1)
+            training_jobs[job_id]["progress"] = int((i / total_steps) * 100)
+            
+        if job_id in training_jobs and training_jobs[job_id]["status"] != "stopped":
+            training_jobs[job_id]["status"] = "completed"
+            training_jobs[job_id]["progress"] = 100
+
 @app.post("/training/start")
 async def start_training(
+    background_tasks: BackgroundTasks,
     model_name: str = Form(...),
     epochs: int = Form(3)
 ):
@@ -519,7 +547,9 @@ async def start_training(
         "progress": 0
     }
     
-    # In production, this would start actual training in background
+    # Engage the background task
+    background_tasks.add_task(simulate_training, job_id, epochs)
+    
     return JSONResponse({
         "status": "started",
         "job_id": job_id,
