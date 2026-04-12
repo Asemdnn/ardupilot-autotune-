@@ -17,7 +17,7 @@
     {
         "instruction": "Analyze this flight log and recommend navigation parameter adjustments.",
         "input": "Flight Log Analysis:\n- GPS Glitches: 12 occurrences\n- Position Drift: 5.2m\n- Navigation Error: 3.8m\n- Current EK3_GPS_GAIN: 1.0\n- Current EK3_ABIAS_P: 0.01\n\nFlight Conditions: Survey drone, outdoor, moderate GPS signal",
-        "output": "Analysis:\n- 12 GPS glitches indicate interference or configuration issues\n- Position drift (5.2m) is too high for survey work\n- Navigation error exceeds acceptable threshold\n\nRecommendations:\n1. Increase EK3_GPS_GAIN: 1.0 → 0.7 (reduce GPS reliance)\n   Rationale: GPS signal not reliable, trust IMU more\n2. Adjust EK3_ABIAS_P: 0.01 → 0.005 (lower variance)\n   Rationale: Reduce accelerometer bias drift"
+        "output": "Analysis:\n- 12 GPS glitches indicate interference or configuration issues\n- Position drift (5.2m) is too high for survey work\n- Navigation error exceeds acceptable threshold\n\nRecommendations:\n1. Reduce EK3_GPS_GAIN: 1.0 → 0.7 (reduce GPS reliance)\n   Rationale: GPS signal not reliable, trust IMU more\n2. Adjust EK3_ABIAS_P: 0.01 → 0.005 (lower variance)\n   Rationale: Reduce accelerometer bias drift"
     },
     {
         "instruction": "Analyze this flight log and recommend filter adjustments.",
@@ -145,14 +145,14 @@
         "output": "Analysis:\n- Mode switching delayed - RC channel issue\n- Channel 5 values inconsistent - calibration needed\n- Mode assignments look correct\n\nRecommendations:\n1. Verify RC5 input in Mission Planner\n2. Check MODE_CH: Should be 5\n3. Calibrate RC inputs for consistency"
     },
     {
-        "instruction": "Analyze this flight log and recommend круиз control adjustments.",
+        "instruction": "Analyze this flight log and recommend cruise control adjustments.",
         "input": "Flight Log Analysis:\n- Cruise Speed: 18 m/s (target was 15)\n- Throttle Oscillations: ±15%\n- Current CRUISE_SPEED: 15\n\nFlight Conditions: Plane, long distance cruise",
         "output": "Analysis:\n- Cruise speed (18 m/s) exceeds target (15 m/s)\n- Throttle oscillations causing inefficiency\n- Need speed control tuning\n\nRecommendations:\n1. Set CRUISE_SPEED: 15 → 12 m/s\n   Rationale: Match actual requirements\n2. Increase CRUISE_THROTTLE_MAX: 75%\n   Rationale: Allow higher throttle for speed control"
     },
     {
         "instruction": "Analyze this flight log and recommend TECS tuning for plane.",
         "input": "Flight Log Analysis:\n- Altitude Overshoot: 15m\n- Speed Undershoot: 4 m/s\n- Current TECS_SPDWEIGHT: 1.0\n\nFlight Conditions: Fixed wing, mission planning",
-        "output": "Analysis:\n- Altitude overshoot (15m) indicates pitch control issues\n- Speed undershoot (4 m/s) suggests thrust problems\n- TECS parameters need adjustment\n\nRecommendations:\n1. Reduce TECS_SPDWEIGHT: 1.0 → 1.5\n   Rationale: Prioritize speed control\n2. Adjust TECS_PITCH_MAX: 25 → 20\n   Rationale: Reduce aggressive pitch"
+        "output": "Analysis:\n- Altitude overshoot (15m) indicates pitch control issues\n- Speed undershoot (4 m/s) suggests thrust problems\n- TECS parameters need adjustment\n\nRecommendations:\n1. Increase TECS_SPDWEIGHT: 1.0 → 1.5\n   Rationale: Prioritize speed control\n2. Adjust TECS_PITCH_MAX: 25 → 20\n   Rationale: Reduce aggressive pitch"
     },
     {
         "instruction": "Analyze this flight log and recommend rover throttle adjustments.",
