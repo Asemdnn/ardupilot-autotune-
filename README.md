@@ -1,8 +1,8 @@
-# ArduPilot AI Tuning System
+﻿# ArduPilot AI Tuning System
 
 A closed-loop AI system that iteratively optimizes ArduPilot flight parameters by analyzing flight logs. Upload your flight logs, get AI-powered parameter recommendations, apply them, fly again, and iterate until you reach optimal performance.
 
-## ⚡ Quick Start (5 Minutes)
+## âš¡ Quick Start (5 Minutes)
 
 ### Step 1: Clone & Install
 
@@ -45,7 +45,7 @@ python app/main.py
 
 ---
 
-## 📋 Complete Step-by-Step Guide
+## ðŸ“‹ Complete Step-by-Step Guide
 
 ### Prerequisites
 
@@ -83,7 +83,7 @@ brew install python3 git curl
 
 ```bash
 git clone https://github.com/Asemdnn/ardupilot-autotune-.git
-cd ardupilot-ai-tuner
+cd ardupilot-autotune-
 ```
 
 #### 1.3 Install Python Packages
@@ -134,9 +134,10 @@ The starter dataset is already in `data/dataset/training_data.json`. To improve 
 #### 2.2 Run Fine-Tuning
 
 ```bash
+pip install -r requirements-training.txt
 cd training
 python train.py \
-    --model qwen2.5:14b \
+    --model Qwen/Qwen2.5-7B-Instruct \
     --data ../data/dataset/ \
     --output ../models/ardupilot-tuner \
     --rank 16 \
@@ -162,7 +163,7 @@ After training, convert to GGUF format for Ollama, or modify `app/analyzer.py` t
 #### 3.1 Start the Server
 
 ```bash
-cd ardupilot-ai-tuner
+cd ardupilot-autotune-
 python app/main.py
 ```
 
@@ -184,9 +185,10 @@ Open your browser to: http://localhost:8000
 
 #### 3.4 Apply Recommendations
 
-The AI will show:
-- **Metrics**: Roll error, overshoot, settling time, vibrations
-- **Recommendations**: Specific parameter changes with rationale
+1. **Select your AI Inference Model** from the dropdown (\qwen2.5:7b\, b\, or :b\).
+2. The AI will process your log and show:
+   - **Metrics**: Roll error, mathematically derived Step-Response Overshoot, Settling time, and vibrations. *(Calculated securely via pandas/numpy vectorization against raw pymavlink iterators for memory-safe handling of 500MB+ logs).*
+   - **Recommendations**: Dynamic parameter adjustments generated in real-time by your designated **Ollama LLM**.
 
 Copy the recommended values and apply them via:
 - Mission Planner
@@ -198,45 +200,45 @@ Copy the recommended values and apply them via:
 ### Phase 4: Iteration Loop
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                      ITERATION WORKFLOW                       │
-├──────────────────────────────────────────────────────────────┤
-│                                                               │
-│   ┌─────────┐    ┌─────────┐    ┌─────────────┐             │
-│   │  Fly    │───▶│ Download │───▶│   Upload    │             │
-│   │  Drone  │    │   Log    │    │   to AI     │             │
-│   └─────────┘    └─────────┘    └──────┬──────┘             │
-│                                          │                   │
-│                                          ▼                   │
-│            ┌─────────────────────────────────────┐           │
-│            │  AI Analyzes & Recommends           │           │
-│            │  New Parameters                     │           │
-│            └──────────────────┬──────────────────┘           │
-│                                 │                              │
-│                                 ▼                              │
-│                         ┌───────────────┐                      │
-│                         │ Apply to FC  │                      │
-│                         │ & Fly Again  │                      │
-│                         └───────┬───────┘                      │
-│                                 │                              │
-│                                 ▼                              │
-│                         [CONVERGED?]                          │
-│                             │                                 │
-│                    ┌────────┴────────┐                        │
-│                    │                 │                        │
-│                   YES               NO                        │
-│                    │                 │                        │
-│                    ▼                 ▼                        │
-│              [OPTIMAL!]        [NEXT ITERATION]              │
-│                                                               │
-└──────────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚                      ITERATION WORKFLOW                       â”‚
+â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+â”‚                                                               â”‚
+â”‚   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”             â”‚
+â”‚   â”‚  Fly    â”‚â”€â”€â”€â–¶â”‚ Download â”‚â”€â”€â”€â–¶â”‚   Upload    â”‚             â”‚
+â”‚   â”‚  Drone  â”‚    â”‚   Log    â”‚    â”‚   to AI     â”‚             â”‚
+â”‚   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜             â”‚
+â”‚                                          â”‚                   â”‚
+â”‚                                          â–¼                   â”‚
+â”‚            â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”           â”‚
+â”‚            â”‚  AI Analyzes & Recommends           â”‚           â”‚
+â”‚            â”‚  New Parameters                     â”‚           â”‚
+â”‚            â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜           â”‚
+â”‚                                 â”‚                              â”‚
+â”‚                                 â–¼                              â”‚
+â”‚                         â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”                      â”‚
+â”‚                         â”‚ Apply to FC  â”‚                      â”‚
+â”‚                         â”‚ & Fly Again  â”‚                      â”‚
+â”‚                         â””â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”˜                      â”‚
+â”‚                                 â”‚                              â”‚
+â”‚                                 â–¼                              â”‚
+â”‚                         [CONVERGED?]                          â”‚
+â”‚                             â”‚                                 â”‚
+â”‚                    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”                        â”‚
+â”‚                    â”‚                 â”‚                        â”‚
+â”‚                   YES               NO                        â”‚
+â”‚                    â”‚                 â”‚                        â”‚
+â”‚                    â–¼                 â–¼                        â”‚
+â”‚              [OPTIMAL!]        [NEXT ITERATION]              â”‚
+â”‚                                                               â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 **Typical Convergence:**
 - **First flight**: Baseline parameters, initial recommendations
 - **Flights 2-5**: Significant improvements each time
 - **Flights 6-10**: Fine-tuning, smaller changes
-- **Flight 10+**: Parameters stabilize → You've converged!
+- **Flight 10+**: Parameters stabilize â†’ You've converged!
 
 ---
 
@@ -269,22 +271,17 @@ The analyzer supports both binary (.bin) and text (.log) formats. If your log do
 
 ---
 
-## 🔧 Configuration
+## ðŸ”§ Configuration
 
-### Changing the Model
+### Changing the Training Model
 
-Edit `app/main.py` to change the model:
+Set the model when launching training:
 
-```python
-# For 7B model (faster, less VRAM)
-model_name = "qwen2.5:7b"
-
-# For 14B model (better reasoning)
-model_name = "qwen2.5:14b"
-
-# For 70B model (best, needs 24GB VRAM)
-model_name = "qwen2.5:70b"
+```bash
+python training/train.py --model Qwen/Qwen2.5-7B-Instruct
 ```
+
+The app also accepts Ollama-style aliases (`qwen2.5:7b`, `qwen2.5:14b`, `qwen2.5:72b`) and maps them to HuggingFace model IDs internally.
 
 ### Adding Custom Parameters
 
@@ -302,31 +299,32 @@ Edit `app/parameters.py` to add more ArduPilot parameters:
 
 ---
 
-## 📁 Project Structure
+## ðŸ“ Project Structure
 
 ```
-ardupilot-ai-tuner/
-├── README.md                    # This file
-├── requirements.txt            # Python dependencies
-├── app/
-│   ├── main.py                  # FastAPI web server
-│   ├── analyzer.py              # Flight log parser
-│   ├── parameters.py             # ArduPilot parameter database
-│   └── templates/
-│       └── index.html            # Web UI
-├── data/
-│   ├── logs/                     # Uploaded flight logs
-│   ├── dataset/                  # Training data
-│   │   └── training_data.json   # Starter dataset
-│   └── outputs/                  # Analysis results
-└── training/
-    ├── train.py                  # QLoRA fine-tuning script
-    └── lora_config.json          # LoRA configuration
+ardupilot-autotune-/
+â”œâ”€â”€ README.md                    # This file
+â”œâ”€â”€ requirements.txt            # Python dependencies
+|-- requirements-training.txt   # Training dependencies
+â”œâ”€â”€ app/
+â”‚   â”œâ”€â”€ main.py                  # FastAPI web server
+â”‚   â”œâ”€â”€ analyzer.py              # Flight log parser
+â”‚   â”œâ”€â”€ parameters.py             # ArduPilot parameter database
+â”‚   â””â”€â”€ templates/
+â”‚       â””â”€â”€ index.html            # Web UI
+â”œâ”€â”€ data/
+â”‚   â”œâ”€â”€ logs/                     # Uploaded flight logs
+â”‚   â”œâ”€â”€ dataset/                  # Training data
+â”‚   â”‚   â””â”€â”€ training_data.json   # Starter dataset
+â”‚   â””â”€â”€ outputs/                  # Analysis results
+â””â”€â”€ training/
+    â”œâ”€â”€ train.py                  # QLoRA fine-tuning script
+    â””â”€â”€ lora_config.json          # LoRA configuration
 ```
 
 ---
 
-## 🚀 Recommended Workflow
+## ðŸš€ Recommended Workflow
 
 ### For Best Results:
 
@@ -346,7 +344,19 @@ ardupilot-ai-tuner/
 
 ---
 
-## 📚 Additional Resources
+## Development Checks
+
+Run local tests:
+
+```bash
+python -m pytest -q
+```
+
+CI runs the same test suite on each push/PR via `.github/workflows/tests.yml`.
+
+---
+
+## ðŸ“š Additional Resources
 
 - [ArduPilot Parameter List](https://ardupilot.org/copter/docs/parameters.html)
 - [QLoRA Paper](https://arxiv.org/abs/2305.14314)
@@ -358,3 +368,4 @@ ardupilot-ai-tuner/
 ## License
 
 MIT
+
