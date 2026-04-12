@@ -295,6 +295,8 @@
         .status-idle { background: #6b7280; }
         .status-running { background: #10b981; }
         .status-stopped { background: #f59e0b; }
+        .status-completed { background: #22c55e; }
+        .status-failed { background: #ef4444; }
         
         .progress-bar {
             height: 8px;
@@ -445,214 +447,6 @@
                 <div class="upload-area" onclick="document.getElementById('fileInput').click()">
                     <div class="upload-icon">📁</div>
                     <h3>Click to select your flight log file</h3>
-                    <p style="color: #8892b0; margin-top: 10px;">Supports .bin and .log files</p>
-                    <input type="file" class="file-input" id="fileInput" accept=".bin,.log" onchange="handleFileSelect(event)">
-                    <div class="selected-file" id="selectedFile"></div>
-                </div>
-                
-                <div class="form-group" style="margin-top: 20px;">
-                    <label>Flight Notes (Optional - describe issues you noticed)</label>
-                    <textarea id="flightNotes" placeholder="e.g., Wobble during fast turns, overshoot on landing"></textarea>
-                </div>
-                
-                <button class="btn btn-primary" id="analyzeBtn" onclick="analyzeLog()" disabled>
-                    🔍 Analyze & Get Recommendations
-                </button>
-            </div>
-            
-            <div class="card" id="loadingSection" style="display: none;">
-                <div class="spinner"></div>
-                <h3 style="text-align: center;">Analyzing your flight log...</h3>
-            </div>
-            
-            <div class="results-section" id="resultsSection">
-                <div class="card">
-                    <h2>📊 Flight Analysis Results</h2>
-                    <div class="metrics-grid" id="metricsGrid"></div>
-                </div>
-                
-                <div class="card">
-                    <h2>⚙️ Recommended Parameter Changes</h2>
-                    <div id="recommendationsList"></div>
-                </div>
-                
-                <button class="btn btn-secondary" onclick="clearResults()">
-                    ➕ Upload Another Log
-                </button>
-            </div>
-            
-            <div class="card">
-                <h2>📜 Flight History</h2>
-                <div id="historyList">
-                    <p style="color: #8892b0;">No flights analyzed yet.</p>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Training -->
-        <div class="card">
-            <h2>🧠 AI Model Training</h2>
-            <p style="color: #8892b0; margin-bottom: 15px;">
-                Fine-tune the AI to better understand your drone type.
-            </p>
-            
-            <div class="training-panel">
-                <div class="training-status">
-                    <span class="status-badge status-idle" id="trainingStatus">IDLE</span>
-                    <span id="trainingInfo">No training in progress</span>
-                </div>
-                
-                <div class="form-group">
-                    <label>Model</label>
-                    <select id="trainModel">
-                        <option value="qwen2.5:7b">Qwen2.5 7B (Fast)</option>
-                        <option value="qwen2.5:14b">Qwen2.5 14B (Better)</option>
-                        <option value="qwen2.5:72b">Qwen2.5 72B (Best - needs 24GB VRAM)</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label>Epochs</label>
-                    <select id="trainEpochs">
-                        <option value="1">1 Epoch (Quick)</option>
-                        <option value="3" selected>3 Epochs (Recommended)</option>
-                        <option value="5">5 Epochs (Thorough)</option>
-                    </select>
-                </div>
-                
-                <div style="display: flex; gap: 15px; margin-top: 20px;">
-                    <button class="btn btn-primary" onclick="startTraining()">
-                        ▶️ Start Training
-                    </button>
-                    <button class="btn btn-stop" onclick="stopTraining()" id="stopBtn" disabled>
-                        ⏹️ Stop
-                    </button>
-                </div>
-                
-                <div class="progress-bar" id="progressBar" style="display: none;">
-                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
-                </div>
-            </div>
-        </div>
-        
-        <footer>
-            <p>ArduPilot AI Tuner - Iterate until optimal 🚁</p>
-            <p style="font-size: 0.85rem; margin-top: 10px;">
-                Upload logs → Get recommendations → Apply → Fly again → Repeat!
-            </p>
-        </footer>
-    </div>
-    
-    <script>
-        let selectedDroneType = null;
-        let selectedFile = null;
-        let currentJobId = null;
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            checkActiveVehicle();
-            loadHistory();
-            startTrainingStatusPoll();
-        });
-        
-        async function checkActiveVehicle() {
-            const response = await fetch('/vehicle/current');
-            const data = await response.json();
-            
-            if (data.status !== 'no_vehicle') {
-                document.getElementById('activeVehicleSection').style.display = 'block';
-                document.getElementById('activeVehicleName').textContent = data.name;
-                document.getElementById('activeVehicleType').textContent = 
-                    `${data.drone_type_name} • ${data.flight_count || 0} flights analyzed`;
-            }
-        }
-        
-        function selectDroneType(element) {
-            document.querySelectorAll('.drone-type-option').forEach(el => el.classList.remove('selected'));
-            element.classList.add('selected');
-            selectedDroneType = element.dataset.type;
-        }
-        
-        async function deleteVehicle(vehicleId) {
-            if (!confirm('Are you sure you want to delete this vehicle?')) return;
-            
-            const formData = new FormData();
-            formData.append('vehicle_id', vehicleId);
-            
-            try {
-                const response = await fetch('/vehicle/delete', { method: 'POST', body: formData });
-                const data = await response.json();
-                if (data.status === 'success') {
-                    window.location.reload();
-                }
-            } catch (e) {
-                console.error(e);
-            }
-        }
-        
-        async function createVehicle() {
-            const name = document.getElementById('vehicleName').value.trim();
-            const params = document.getElementById('currentParams').value;
-            
-            if (!name) { alert('Please enter a vehicle name'); return; }
-            if (!selectedDroneType) { alert('Please select a drone type'); return; }
-            
-            const formData = new FormData();
-            formData.append('name', name);
-            formData.append('drone_type', selectedDroneType);
-            formData.append('current_params', params);
-            
-            const response = await fetch('/vehicle/create', { method: 'POST', body: formData });
-            const data = await response.json();
-            
-            if (data.status === 'success') {
-                document.getElementById('activeVehicleSection').style.display = 'block';
-                document.getElementById('activeVehicleName').textContent = data.vehicle.name;
-                document.getElementById('activeVehicleType').textContent = 
-                    `${data.vehicle.drone_type_name} • 0 flights analyzed`;
-                
-                // Reload to display the new vehicle in the list and set it as active
-                window.location.reload();
-            }
-        }
-        
-        async function selectVehicle(vehicleId) {
-            const formData = new FormData();
-            formData.append('vehicle_id', vehicleId);
-            const response = await fetch('/vehicle/select', {
-                method: 'POST',
-                body: formData
-            });
-            const data = await response.json();
-            if (data.status === 'success') {
-                // Reload to highlight the newly selected vehicle
-                window.location.reload();
-            }
-        }
-        
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (file) {
-                selectedFile = file;
-                document.getElementById('selectedFile').textContent = '✓ ' + file.name;
-                document.getElementById('analyzeBtn').disabled = false;
-            }
-        }
-        
-        async function analyzeLog() {
-            if (!selectedFile) { alert('Please select a flight log file'); return; }
-            
-            document.getElementById('loadingSection').style.display = 'block';
-            document.getElementById('resultsSection').style.display = 'none';
-            
-            const formData = new FormData();
-            formData.append('file', selectedFile);
-            formData.append('notes', document.getElementById('flightNotes').value || '');
-            
-            try {
-                const response = await fetch('/analyze', { method: 'POST', body: formData });
-                const data = await response.json();
-                
-                if (data.status === 'success') {
                     displayResults(data);
                 } else {
                     alert('Error: ' + (data.detail || 'Unknown error'));
@@ -736,15 +530,28 @@
             formData.append('model_name', model);
             formData.append('epochs', epochs);
             
-            const response = await fetch('/training/start', { method: 'POST', body: formData });
-            const data = await response.json();
-            
-            if (data.status === 'started') {
-                currentJobId = data.job_id;
-                document.getElementById('trainingStatus').textContent = 'RUNNING';
-                document.getElementById('trainingStatus').className = 'status-badge status-running';
-                document.getElementById('trainingInfo').textContent = `Training ${model} for ${epochs} epochs...`;
-                document.getElementById('stopBtn').disabled = false;
+            try {
+                const response = await fetch('/training/start', { method: 'POST', body: formData });
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Training start failed');
+                }
+
+                if (data.status === 'started') {
+                    currentJobId = data.job_id;
+                    document.getElementById('trainingStatus').textContent = 'RUNNING';
+                    document.getElementById('trainingStatus').className = 'status-badge status-running';
+                    document.getElementById('trainingInfo').textContent = `Training ${model} for ${epochs} epochs...`;
+                    document.getElementById('stopBtn').disabled = false;
+                    document.getElementById('progressBar').style.display = 'block';
+                    document.getElementById('progressFill').style.width = '2%';
+                }
+            } catch (error) {
+                document.getElementById('trainingStatus').textContent = 'FAILED';
+                document.getElementById('trainingStatus').className = 'status-badge status-failed';
+                document.getElementById('trainingInfo').textContent = error.message;
+                document.getElementById('stopBtn').disabled = true;
             }
         }
         
@@ -768,8 +575,23 @@
                     if (data.status === 'running') {
                         document.getElementById('progressBar').style.display = 'block';
                         document.getElementById('progressFill').style.width = (data.progress || 0) + '%';
-                    } else if (data.status === 'completed' || data.status === 'stopped') {
+                        document.getElementById('trainingStatus').textContent = 'RUNNING';
+                        document.getElementById('trainingStatus').className = 'status-badge status-running';
+                    } else if (data.status === 'completed') {
+                        document.getElementById('trainingStatus').textContent = 'COMPLETED';
+                        document.getElementById('trainingStatus').className = 'status-badge status-completed';
                         document.getElementById('progressFill').style.width = '100%';
+                        document.getElementById('trainingInfo').textContent = 'Training completed successfully';
+                        document.getElementById('stopBtn').disabled = true;
+                    } else if (data.status === 'stopped') {
+                        document.getElementById('trainingStatus').textContent = 'STOPPED';
+                        document.getElementById('trainingStatus').className = 'status-badge status-stopped';
+                        document.getElementById('trainingInfo').textContent = 'Training stopped by user';
+                        document.getElementById('stopBtn').disabled = true;
+                    } else if (data.status === 'failed') {
+                        document.getElementById('trainingStatus').textContent = 'FAILED';
+                        document.getElementById('trainingStatus').className = 'status-badge status-failed';
+                        document.getElementById('trainingInfo').textContent = data.error || 'Training failed';
                         document.getElementById('stopBtn').disabled = true;
                     }
                 } catch (e) {}
