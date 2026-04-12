@@ -74,7 +74,7 @@ ARDUPILOT_PARAMETERS = {
             "ATC_RAT_YAW_D": {
                 "name": "Yaw Rate D Gain",
                 "description": "Derivative gain for yaw rate controller",
-                "range": [0.001, 0.02],
+                "range": [0.0, 0.02],
                 "default": 0.0,
                 "unit": "ratio"
             },
@@ -168,6 +168,13 @@ ARDUPILOT_PARAMETERS = {
                 "default": 2.0,
                 "unit": "ratio"
             },
+            "WPNAV_RADIUS": {
+                "name": "Waypoint Radius",
+                "description": "Waypoint acceptance radius",
+                "range": [0.5, 10.0],
+                "default": 2.0,
+                "unit": "m"
+            },
         }
     },
     "filters": {
@@ -241,6 +248,13 @@ ARDUPILOT_PARAMETERS = {
                 "default": 0,
                 "unit": "enum"
             },
+            "VT_FW_Q_SPEED": {
+                "name": "VTOL Transition Speed",
+                "description": "Target speed for VTOL transition",
+                "range": [5, 40],
+                "default": 15,
+                "unit": "m/s"
+            },
         }
     },
     "motor_outputs": {
@@ -271,7 +285,7 @@ ARDUPILOT_PARAMETERS = {
                 "name": "Throttle Maximum",
                 "description": "Maximum throttle",
                 "range": [1500, 2000],
-                "default": 1000,
+                "default": 2000,
                 "unit": "us"
             },
             "MOT_SPIN_MIN": {
