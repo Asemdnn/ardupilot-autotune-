@@ -3,10 +3,9 @@ QLoRA Fine-tuning Script for ArduPilot Parameter Tuning Model
 Fine-tunes a base LLM to become an ArduPilot parameter tuning expert.
 
 Usage:
-    python train.py --model qwen2.5:14b --data ../data/dataset/
+    python train.py --model Qwen/Qwen2.5-7B-Instruct --data ../data/dataset/
 """
 
-import os
 import sys
 import json
 import argparse
@@ -33,6 +32,47 @@ except ImportError as e:
     print("Error: Required packages not installed.")
     print("Please run: pip install torch transformers peft datasets accelerate")
     sys.exit(1)
+
+
+MODEL_ALIASES = {
+    "qwen2.5:7b": "Qwen/Qwen2.5-7B-Instruct",
+    "qwen2.5:14b": "Qwen/Qwen2.5-14B-Instruct",
+    "qwen2.5:72b": "Qwen/Qwen2.5-72B-Instruct",
+}
+
+
+def resolve_model_name(model_name: str) -> str:
+    normalized = model_name.strip()
+    if normalized in MODEL_ALIASES:
+        return MODEL_ALIASES[normalized]
+    return normalized
+
+
+def load_lora_settings(rank: int) -> Dict:
+    settings = {
+        "r": rank,
+        "lora_alpha": rank * 2,
+        "lora_dropout": 0.05,
+        "target_modules": [
+            "q_proj", "k_proj", "v_proj", "o_proj",
+            "gate_proj", "up_proj", "down_proj"
+        ],
+        "bias": "none",
+    }
+
+    config_path = Path(__file__).parent / "lora_config.json"
+    if config_path.exists():
+        try:
+            with open(config_path, encoding="utf-8") as f:
+                loaded = json.load(f)
+            settings["lora_alpha"] = int(loaded.get("lora_alpha", settings["lora_alpha"]))
+            settings["lora_dropout"] = float(loaded.get("lora_dropout", settings["lora_dropout"]))
+            settings["target_modules"] = loaded.get("target_modules", settings["target_modules"])
+            settings["bias"] = loaded.get("bias", settings["bias"])
+        except (ValueError, TypeError, json.JSONDecodeError):
+            print("Warning: Failed to parse lora_config.json, using defaults.")
+
+    return settings
 
 
 def load_dataset(data_dir: str) -> List[Dict]:
@@ -69,8 +109,18 @@ def load_dataset(data_dir: str) -> List[Dict]:
         print(f"Warning: No training data found in {data_dir}")
         print("Creating sample dataset...")
         examples = create_sample_dataset()
-    
-    return examples
+
+    # Keep only examples that contain all expected fields.
+    filtered: List[Dict] = []
+    for ex in examples:
+        if ex.get("instruction") and ex.get("input") and ex.get("output"):
+            filtered.append(ex)
+
+    dropped = len(examples) - len(filtered)
+    if dropped:
+        print(f"Dropped {dropped} malformed training examples.")
+
+    return filtered
 
 
 def create_sample_dataset() -> List[Dict]:
@@ -272,17 +322,17 @@ Recommendations:
     ]
 
 
-def format_examples(examples: List[Dict]) -> str:
+def format_examples(examples: List[Dict]) -> List[str]:
     """
-    Format examples into training text.
+    Format examples into per-sample training texts.
     """
-    formatted = []
-    
+    formatted: List[str] = []
+
     for ex in examples:
         instruction = ex.get("instruction", "")
         input_text = ex.get("input", "")
         output_text = ex.get("output", "")
-        
+
         text = f"""Instruction: {instruction}
 
 Input:
@@ -290,10 +340,10 @@ Input:
 
 Output:
 {output_text}"""
-        
+
         formatted.append(text)
-    
-    return "\n\n".join(formatted)
+
+    return formatted
 
 
 def prepare_dataset(examples: List[Dict], tokenizer, max_length: int = 2048):
@@ -301,23 +351,23 @@ def prepare_dataset(examples: List[Dict], tokenizer, max_length: int = 2048):
     Prepare dataset for training.
     """
     formatted_texts = format_examples(examples)
-    
-    # Tokenize
+
+    # Tokenize each sample independently.
     encodings = tokenizer(
         formatted_texts,
         truncation=True,
         max_length=max_length,
         padding="max_length",
-        return_tensors="pt"
     )
-    
-    # Create dataset
+
+    # Create dataset with one row per sample.
     dataset = Dataset.from_dict({
         "input_ids": encodings["input_ids"],
         "attention_mask": encodings["attention_mask"],
-        "labels": encodings["input_ids"].clone()
     })
-    
+
+    dataset = dataset.map(lambda batch: {"labels": batch["input_ids"]})
+
     return dataset
 
 
@@ -336,6 +386,7 @@ def train(
     Main training function.
     """
     set_seed(seed)
+    resolved_model_name = resolve_model_name(model_name)
     
     print(f"\n{'='*60}")
     print(f"ArduPilot AI Tuner - QLoRA Fine-tuning")
@@ -350,33 +401,32 @@ def train(
         print(f"VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB\n")
     
     # Load tokenizer
-    print(f"Loading tokenizer: {model_name}")
+    print(f"Loading tokenizer: {resolved_model_name}")
     tokenizer = AutoTokenizer.from_pretrained(
-        model_name,
+        resolved_model_name,
         trust_remote_code=True
     )
-    tokenizer.pad_token = tokenizer.eos_token
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
     
     # Load base model
-    print(f"Loading base model: {model_name}")
+    print(f"Loading base model: {resolved_model_name}")
     model = AutoModelForCausalLM.from_pretrained(
-        model_name,
-        torch_dtype=torch.float16,
+        resolved_model_name,
+        torch_dtype=torch.float16 if device.type == "cuda" else torch.float32,
         device_map="auto",
         trust_remote_code=True
     )
     
     # Configure LoRA
+    lora_settings = load_lora_settings(rank)
     lora_config = LoraConfig(
-        r=rank,
-        lora_alpha=rank * 2,
-        lora_dropout=0.05,
+        r=lora_settings["r"],
+        lora_alpha=lora_settings["lora_alpha"],
+        lora_dropout=lora_settings["lora_dropout"],
         task_type=TaskType.CAUSAL_LM,
-        target_modules=[
-            "q_proj", "k_proj", "v_proj", "o_proj",
-            "gate_proj", "up_proj", "down_proj"
-        ],
-        bias="none"
+        target_modules=lora_settings["target_modules"],
+        bias=lora_settings["bias"],
     )
     
     # Apply LoRA
@@ -444,8 +494,8 @@ def train(
 
 def main():
     parser = argparse.ArgumentParser(description="Fine-tune LLM for ArduPilot tuning")
-    parser.add_argument("--model", type=str, default="qwen2.5:14b",
-                        help="Base model name (HuggingFace or Ollama)")
+    parser.add_argument("--model", type=str, default="Qwen/Qwen2.5-7B-Instruct",
+                        help="Base model name (HuggingFace repo ID or supported Ollama alias)")
     parser.add_argument("--data", type=str, default="../data/dataset/",
                         help="Training data directory")
     parser.add_argument("--output", type=str, default="./ardupilot-tuner-model",
