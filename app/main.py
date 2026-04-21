@@ -145,8 +145,12 @@ class ParameterSuggestion:
 def load_vehicles() -> List[Dict]:
     """Load vehicles from file."""
     if VEHICLES_FILE.exists():
-        with open(VEHICLES_FILE, encoding="utf-8") as f:
-            return json.load(f)
+        try:
+            with open(VEHICLES_FILE, encoding="utf-8") as f:
+                return json.load(f)
+        except json.JSONDecodeError:
+            print(f"Warning: Failed to decode {VEHICLES_FILE}. Returning empty list.")
+            return []
     return []
 
 
@@ -460,7 +464,7 @@ async def analyze_log(
             raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
         # Analyze the log
-        metrics = analyze_flight_log(str(filepath))
+        metrics = await asyncio.to_thread(analyze_flight_log, str(filepath))
 
         # Generate recommendations based on vehicle type
         current_params = parse_current_params(current_vehicle.get("current_params"))
@@ -570,6 +574,14 @@ If no tuning is needed, return an empty array: []
             data = response.json()
             llm_text = data.get("response", "[]")
             
+            # Strip markdown JSON wrappers if present
+            llm_text = llm_text.strip()
+            if llm_text.startswith("```json"):
+                llm_text = llm_text[7:]
+            if llm_text.endswith("```"):
+                llm_text = llm_text[:-3]
+            llm_text = llm_text.strip()
+            
             # 3. Parse and sanitize the response
             try:
                 parsed_recs = json.loads(llm_text)
@@ -613,11 +625,8 @@ If no tuning is needed, return an empty array: []
     return recommendations
 
 
-@app.get("/history")
-async def get_history(vehicle_id: int = None):
-    """Get history of all analyzed logs for a vehicle."""
+def _read_history_sync(vehicle_id: Optional[int] = None) -> list:
     history = []
-
     for output_file in OUTPUTS_DIR.glob("*_analysis.json"):
         try:
             with open(output_file, encoding="utf-8") as f:
@@ -632,10 +641,13 @@ async def get_history(vehicle_id: int = None):
                 })
         except (OSError, json.JSONDecodeError):
             continue
-
-    # Sort by timestamp descending
     history.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    return history
 
+@app.get("/history")
+async def get_history(vehicle_id: Optional[int] = None):
+    """Get history of all analyzed logs for a vehicle."""
+    history = await asyncio.to_thread(_read_history_sync, vehicle_id)
     return JSONResponse(history)
 
 
@@ -760,6 +772,10 @@ async def start_training(
     if epochs < 1 or epochs > 20:
         raise HTTPException(status_code=400, detail="Epochs must be between 1 and 20.")
 
+    normalized_model = model_name.strip()
+    if normalized_model not in MODEL_ALIASES and normalized_model not in MODEL_ALIASES.values():
+        raise HTTPException(status_code=400, detail="Invalid model name. Must be a supported model.")
+
     if not (DATA_DIR / "dataset").exists():
         raise HTTPException(status_code=400, detail="Dataset directory is missing: data/dataset")
 
@@ -784,7 +800,7 @@ async def start_training(
 
 
 @app.get("/training/status")
-async def get_training_status(job_id: str = None):
+async def get_training_status(job_id: Optional[str] = None):
     """Get training status."""
     if job_id:
         if job_id in training_jobs:

@@ -90,12 +90,15 @@ def load_dataset(data_dir: str) -> List[Dict]:
     
     # Load all JSON files in the directory
     for json_file in data_path.glob("*.json"):
-        with open(json_file) as f:
-            data = json.load(f)
-            if isinstance(data, list):
-                examples.extend(data)
-            elif isinstance(data, dict):
-                examples.append(data)
+        try:
+            with open(json_file) as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    examples.extend(data)
+                elif isinstance(data, dict):
+                    examples.append(data)
+        except json.JSONDecodeError:
+            print(f"Warning: Skipping {json_file} due to JSONDecodeError.")
     
     # If no JSON files, check for .jsonl
     if not examples:
@@ -103,7 +106,10 @@ def load_dataset(data_dir: str) -> List[Dict]:
             with open(jsonl_file) as f:
                 for line in f:
                     if line.strip():
-                        examples.append(json.loads(line))
+                        try:
+                            examples.append(json.loads(line))
+                        except json.JSONDecodeError:
+                            continue
     
     if not examples:
         print(f"Warning: No training data found in {data_dir}")
@@ -322,9 +328,9 @@ Recommendations:
     ]
 
 
-def format_examples(examples: List[Dict]) -> List[str]:
+def format_examples(examples: List[Dict], tokenizer) -> List[str]:
     """
-    Format examples into per-sample training texts.
+    Format examples into per-sample training texts using chat templates.
     """
     formatted: List[str] = []
 
@@ -333,14 +339,13 @@ def format_examples(examples: List[Dict]) -> List[str]:
         input_text = ex.get("input", "")
         output_text = ex.get("output", "")
 
-        text = f"""Instruction: {instruction}
-
-Input:
-{input_text}
-
-Output:
-{output_text}"""
-
+        messages = [
+            {"role": "system", "content": "You are an expert ArduPilot tuning AI."},
+            {"role": "user", "content": f"{instruction}\n\n{input_text}"},
+            {"role": "assistant", "content": output_text}
+        ]
+        
+        text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False)
         formatted.append(text)
 
     return formatted
@@ -350,7 +355,7 @@ def prepare_dataset(examples: List[Dict], tokenizer, max_length: int = 2048):
     """
     Prepare dataset for training.
     """
-    formatted_texts = format_examples(examples)
+    formatted_texts = format_examples(examples, tokenizer)
 
     # Tokenize each sample independently.
     encodings = tokenizer(
@@ -366,7 +371,7 @@ def prepare_dataset(examples: List[Dict], tokenizer, max_length: int = 2048):
         "attention_mask": encodings["attention_mask"],
     })
 
-    dataset = dataset.map(lambda batch: {"labels": batch["input_ids"]})
+    # DataCollatorForLanguageModeling will handle the "labels" and ignore pad tokens via -100 masking.
 
     return dataset
 
@@ -404,7 +409,7 @@ def train(
     print(f"Loading tokenizer: {resolved_model_name}")
     tokenizer = AutoTokenizer.from_pretrained(
         resolved_model_name,
-        trust_remote_code=True
+        trust_remote_code=False
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -415,8 +420,10 @@ def train(
         resolved_model_name,
         torch_dtype=torch.float16 if device.type == "cuda" else torch.float32,
         device_map="auto",
-        trust_remote_code=True
+        trust_remote_code=False
     )
+    
+    # Using eos_token as pad_token means token embeddings don't need resizing
     
     # Configure LoRA
     lora_settings = load_lora_settings(rank)

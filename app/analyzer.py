@@ -26,7 +26,7 @@ def analyze_flight_log(log_path: str) -> Dict:
         "num_waypoints": 0,
         "gps_horizontal_accuracy": 0.0,
         "battery_voltage_min": 0.0,
-        "cpu_load_max": 0.0,
+        "loop_time_ms": 0.0,  # CLpt converted to ms (was cpu_load_max)
     }
     
     if not os.path.exists(log_path):
@@ -55,21 +55,17 @@ def analyze_flight_log(log_path: str) -> Dict:
             'P': []
         }
         
-        while True:
-            msg = mlog.recv_match(type=['RATE', 'ATT', 'GPS', 'BATT', 'BAT2', 'IMU', 'IMU2', 'IMU3', 'PERF', 'ERR', 'RCLL', 'RCRL'], blocking=False)
-            if msg is None:
-                break
-                
-            msg_type = msg.get_type()
+        try:
+            while True:
+                msg = mlog.recv_match(type=['RATE', 'GPS', 'BAT', 'BATT', 'BAT2', 'VIBE', 'PERF'], blocking=False)
+                if msg is None:
+                    break
+                    
+                msg_type = msg.get_type()
             
             if msg_type == "PERF" and hasattr(msg, 'CLpt'):
-                cpu_max = max(cpu_max, msg.CLpt)
-            
-            elif msg_type == "ATT":
-                if hasattr(msg, 'Roll'):
-                    max_roll_rate = max(max_roll_rate, abs(msg.Roll))
-                if hasattr(msg, 'Pitch'):
-                    max_pitch_rate = max(max_pitch_rate, abs(msg.Pitch))
+                # CLpt is loop execution time in microseconds; convert to ms
+                cpu_max = max(cpu_max, msg.CLpt / 1000.0)
             
             elif msg_type == 'RATE':
                 # Use getattr with defaults in case of legacy names
@@ -79,34 +75,34 @@ def analyze_flight_log(log_path: str) -> Dict:
                 p_des = getattr(msg, 'PDes', 0.0)
                 p_act = getattr(msg, 'P', 0.0)
                 
+                max_roll_rate = max(max_roll_rate, abs(r_act))
+                max_pitch_rate = max(max_pitch_rate, abs(p_act))
+                
                 rate_data['TimeUS'].append(time_us)
                 rate_data['RDes'].append(r_des)
                 rate_data['R'].append(r_act)
                 rate_data['PDes'].append(p_des)
                 rate_data['P'].append(p_act)
                 
-            # Handle legacy ArduPilot < 4.0 logs
-            elif msg_type == 'RCLL':
-                time_us = getattr(msg, 'TimeUS', 0)
-                r_des = getattr(msg, 'Des', 0.0)
-                r_act = getattr(msg, 'Act', 0.0)
-                # We only have Roll in RCLL, align with length by using zeroes for pitch, or skip
-                # To be safe, we rely mainly on RATE messages for >4.0
-                pass
-                
             elif msg_type == "GPS" and hasattr(msg, 'HDop'):
                 gps_hdop_max = max(gps_hdop_max, msg.HDop)
                 
-            elif msg_type in ['BATT', 'BAT2'] and hasattr(msg, 'Volt'):
+            elif msg_type in ['BAT', 'BATT', 'BAT2'] and hasattr(msg, 'Volt'):
                 volt_min = min(volt_min, msg.Volt)
                 
-            elif msg_type in ['IMU', 'IMU2', 'IMU3'] and hasattr(msg, 'Vibe'):
-                v = sum(msg.Vibe) / 3 if isinstance(msg.Vibe, (list, tuple)) else msg.Vibe
+            elif msg_type == 'VIBE':
+                # ArduPilot 4.x exposes VibeX/VibeY/VibeZ natively in VIBE
+                vx = getattr(msg, 'VibeX', 0.0)
+                vy = getattr(msg, 'VibeY', 0.0)
+                vz = getattr(msg, 'VibeZ', 0.0)
+                v = math.sqrt(vx**2 + vy**2 + vz**2)
                 vibration_max = max(vibration_max, v)
+        finally:
+            mlog.close()
 
         metrics['vibration_g'] = vibration_max
         metrics['battery_voltage_min'] = volt_min if volt_min != float('inf') else 0.0
-        metrics['cpu_load_max'] = cpu_max
+        metrics['loop_time_ms'] = cpu_max  # renamed from cpu_load_max: CLpt in ms
         metrics['max_roll_rate'] = max_roll_rate
         metrics['max_pitch_rate'] = max_pitch_rate
         metrics['gps_horizontal_accuracy'] = gps_hdop_max
@@ -151,13 +147,17 @@ def _analyze_maneuvers(df: pd.DataFrame) -> Tuple[float, float]:
         des_col = f'{axis}Des'
         act_col = axis
         
-        # Calculate rate of change of desired input
+        # Calculate rate of change of desired input over time (deg/s^2)
+        dt = df['TimeS'].diff()
+        
+        # 2500 deg/s^2 acceleration threshold identifies a hard stick input
+        step_threshold = 2500.0  
+        
         df['DesDiff'] = df[des_col].diff().abs()
+        dt_safe = np.where(dt > 0.001, dt, 1.0) # avoid division by zero or NaN
+        df['DesAcc'] = np.where(dt > 0.001, df['DesDiff'] / dt_safe, 0.0)
         
-        # 50 deg/s per frame step threshold identifies a hard stick input
-        step_threshold = 50.0  
-        
-        step_indices = df.index[df['DesDiff'] > step_threshold].tolist()
+        step_indices = df.index[df['DesAcc'] > step_threshold].tolist()
         
         # Cluster steps to prevent capturing the same maneuver continuously
         cleaned_steps = []
@@ -192,24 +192,30 @@ def _analyze_maneuvers(df: pd.DataFrame) -> Tuple[float, float]:
             overshoots.append(overshoot_val)
             
             # Calculate settling time (time to stay within 5% of target)
-            tolerance = max(abs(target_value) * 0.05, 5.0) # 5% or 5 deg/s
-            
-            settled_time = 2.0 # Default failure
-            is_settled = False
-            
+            tolerance = max(abs(target_value) * 0.05, 5.0)  # 5% or 5 deg/s
+
+            # Track the start of the *last* contiguous band entry.
+            # If the response rings in and out, we reset and only count the
+            # final unbroken stint inside the tolerance band.
+            settled_time = None
+            current_entry = None
+
             for _, row in window.iterrows():
                 val = row[act_col]
                 if abs(val - target_value) <= tolerance:
-                    if not is_settled:
-                        settled_time = row['TimeS'] - t0
-                        is_settled = True
+                    if current_entry is None:
+                        current_entry = row['TimeS'] - t0
                 else:
-                    is_settled = False
-            
-            if not is_settled:
-                settling_times.append(2.0)
-            else:
-                settling_times.append(settled_time)
+                    # Left the band — reset
+                    if current_entry is not None:
+                        settled_time = current_entry
+                    current_entry = None
+
+            # If still inside the band at end of window, record that entry
+            if current_entry is not None:
+                settled_time = current_entry
+
+            settling_times.append(settled_time if settled_time is not None else 2.0)
                 
     final_overshoot = float(np.mean(overshoots)) if overshoots else 0.0
     final_settling = float(np.mean(settling_times)) if settling_times else 0.0
@@ -231,8 +237,10 @@ def _basic_parse(log_path: str) -> Dict:
         "max_roll_rate": 0.0,
         "max_pitch_rate": 0.0,
         "flight_duration_sec": 0.0,
+        "num_waypoints": 0,
+        "gps_horizontal_accuracy": 0.0,
         "battery_voltage_min": 0.0,
-        "cpu_load_max": 0.0
+        "loop_time_ms": 0.0,
     }
 
 def extract_key_metrics(log_path: str) -> Dict:

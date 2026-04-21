@@ -3,6 +3,9 @@ ArduPilot Parameter Definitions
 Contains all tuneable parameters with their safe ranges and descriptions.
 """
 
+import math
+from typing import Optional
+
 # ArduPilot parameter definitions organized by category
 ARDUPILOT_PARAMETERS = {
     "attitude_controller": {
@@ -248,9 +251,14 @@ ARDUPILOT_PARAMETERS = {
                 "default": 0,
                 "unit": "enum"
             },
+        }
+    },
+    "vtol": {
+        "category": "VTOL Parameters",
+        "parameters": {
             "VT_FW_Q_SPEED": {
                 "name": "VTOL Transition Speed",
-                "description": "Target speed for VTOL transition",
+                "description": "Target airspeed during VTOL-to-fixed-wing transition",
                 "range": [5, 40],
                 "default": 15,
                 "unit": "m/s"
@@ -260,47 +268,33 @@ ARDUPILOT_PARAMETERS = {
     "motor_outputs": {
         "category": "Motor Output (RCOUT)",
         "parameters": {
-            "RCOUT_MIN": {
+            "MOT_PWM_MIN": {
                 "name": "Minimum PWM Output",
-                "description": "Minimum PWM pulse width",
+                "description": "Minimum PWM pulse width sent to ESCs",
                 "range": [800, 1200],
                 "default": 1000,
                 "unit": "us"
             },
-            "RCOUT_MAX": {
+            "MOT_PWM_MAX": {
                 "name": "Maximum PWM Output",
-                "description": "Maximum PWM pulse width",
+                "description": "Maximum PWM pulse width sent to ESCs",
                 "range": [1500, 2200],
-                "default": 2000,
-                "unit": "us"
-            },
-            "RCOUT_THR_MIN": {
-                "name": "Throttle Minimum",
-                "description": "Minimum throttle when armed",
-                "range": [0, 400],
-                "default": 0,
-                "unit": "us"
-            },
-            "RCOUT_THR_MAX": {
-                "name": "Throttle Maximum",
-                "description": "Maximum throttle",
-                "range": [1500, 2000],
                 "default": 2000,
                 "unit": "us"
             },
             "MOT_SPIN_MIN": {
                 "name": "Motor Spin Minimum",
-                "description": "Minimum motor spin when armed",
-                "range": [0, 400],
-                "default": 0,
-                "unit": "us"
+                "description": "Minimum motor spin when armed (0=disabled)",
+                "range": [0.0, 0.3],
+                "default": 0.0,
+                "unit": "ratio"
             },
             "MOT_SPIN_MAX": {
                 "name": "Motor Spin Maximum",
-                "description": "Maximum motor spin",
-                "range": [5000, 10000],
-                "default": 9500,
-                "unit": "thousand"
+                "description": "Maximum motor spin as a fraction of full throttle",
+                "range": [0.9, 1.0],
+                "default": 0.95,
+                "unit": "ratio"
             },
             "MOT_BAT_VOLT_MAX": {
                 "name": "Motor Battery Voltage Max",
@@ -413,13 +407,16 @@ def validate_parameter(parameter: str, value: str) -> tuple:
             try:
                 # Try to convert value to appropriate type
                 if param_info["unit"] == "bool":
-                    num_value = int(value)
+                    num_value = int(float(value))
                 elif param_info["unit"] in ["enum", "mode", "channel"]:
-                    num_value = int(value)
+                    num_value = int(float(value))
                 elif param_info["unit"] in ["ratio", "variance", "gain"]:
                     num_value = float(value)
                 else:
                     num_value = float(value)
+                
+                if math.isnan(num_value):
+                    return False, "Value cannot be NaN"
                 
                 # Check if within range
                 if num_value < param_info["range"][0]:
@@ -465,7 +462,7 @@ def get_all_parameters() -> dict:
     return ARDUPILOT_PARAMETERS
 
 
-def get_parameter_info(parameter: str) -> dict:
+def get_parameter_info(parameter: str) -> Optional[dict]:
     """Get information about a specific parameter."""
     for category_data in ARDUPILOT_PARAMETERS.values():
         if parameter in category_data["parameters"]:
