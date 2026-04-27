@@ -14,23 +14,21 @@ from typing import List, Dict
 
 # Check for required packages
 try:
-    import torch
-    from transformers import (
+    import torch  # type: ignore
+    from transformers import (  # type: ignore
         AutoModelForCausalLM,
         AutoTokenizer,
         TrainingArguments,
         DataCollatorForLanguageModeling,
-        set_seed
+        set_seed,
     )
-    from peft import (
-        LoraConfig,
-        get_peft_model,
-        TaskType
-    )
-    from datasets import Dataset
-except ImportError as e:
+    from peft import LoraConfig, get_peft_model, TaskType  # type: ignore
+    from datasets import Dataset  # type: ignore
+except ImportError:
     print("Error: Required packages not installed.")
-    print("Please run: pip install torch transformers peft datasets accelerate")
+    print(
+        "Please run: pip install torch transformers peft datasets accelerate"
+    )
     sys.exit(1)
 
 
@@ -54,8 +52,13 @@ def load_lora_settings(rank: int) -> Dict:
         "lora_alpha": rank * 2,
         "lora_dropout": 0.05,
         "target_modules": [
-            "q_proj", "k_proj", "v_proj", "o_proj",
-            "gate_proj", "up_proj", "down_proj"
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
         ],
         "bias": "none",
     }
@@ -65,9 +68,15 @@ def load_lora_settings(rank: int) -> Dict:
         try:
             with open(config_path, encoding="utf-8") as f:
                 loaded = json.load(f)
-            settings["lora_alpha"] = int(loaded.get("lora_alpha", settings["lora_alpha"]))
-            settings["lora_dropout"] = float(loaded.get("lora_dropout", settings["lora_dropout"]))
-            settings["target_modules"] = loaded.get("target_modules", settings["target_modules"])
+            settings["lora_alpha"] = int(
+                loaded.get("lora_alpha", settings["lora_alpha"])
+            )
+            settings["lora_dropout"] = float(
+                loaded.get("lora_dropout", settings["lora_dropout"])
+            )
+            settings["target_modules"] = loaded.get(
+                "target_modules", settings["target_modules"]
+            )
             settings["bias"] = loaded.get("bias", settings["bias"])
         except (ValueError, TypeError, json.JSONDecodeError):
             print("Warning: Failed to parse lora_config.json, using defaults.")
@@ -78,16 +87,16 @@ def load_lora_settings(rank: int) -> Dict:
 def load_dataset(data_dir: str) -> List[Dict]:
     """
     Load training dataset from JSON files.
-    
+
     Args:
         data_dir: Directory containing training data
-    
+
     Returns:
         List of training examples
     """
     data_path = Path(data_dir)
     examples = []
-    
+
     # Load all JSON files in the directory
     for json_file in data_path.glob("*.json"):
         try:
@@ -99,7 +108,7 @@ def load_dataset(data_dir: str) -> List[Dict]:
                     examples.append(data)
         except json.JSONDecodeError:
             print(f"Warning: Skipping {json_file} due to JSONDecodeError.")
-    
+
     # If no JSON files, check for .jsonl
     if not examples:
         for jsonl_file in data_path.glob("*.jsonl"):
@@ -110,7 +119,7 @@ def load_dataset(data_dir: str) -> List[Dict]:
                             examples.append(json.loads(line))
                         except json.JSONDecodeError:
                             continue
-    
+
     if not examples:
         print(f"Warning: No training data found in {data_dir}")
         print("Creating sample dataset...")
@@ -135,7 +144,7 @@ def create_sample_dataset() -> List[Dict]:
     """
     return [
         {
-            "instruction": "Analyze this flight log and recommend PID tuning adjustments.",
+            "instruction": "Analyze this flight log and recommend PID tuning adjustments.",  # noqa: E501
             "input": """Flight Log Analysis:
 - Max Roll Error: 15.2°
 - Overshoot: 12%
@@ -157,10 +166,10 @@ Recommendations:
 2. Increase ATC_RAT_RLL_D: 0.002 → 0.004 (100% increase)
    Rationale: Add damping to reduce oscillation
 3. Keep ATC_RAT_RLL_I: 0.05 (no change)
-   Rationale: I term is in good range"""
+   Rationale: I term is in good range""",
         },
         {
-            "instruction": "Analyze this flight log and recommend PID tuning adjustments.",
+            "instruction": "Analyze this flight log and recommend PID tuning adjustments.",  # noqa: E501
             "input": """Flight Log Analysis:
 - Max Roll Error: 3.1°
 - Overshoot: 2%
@@ -178,10 +187,10 @@ Flight Conditions: Cinematic drone, outdoor, calm""",
 
 Recommendations:
 - No parameter changes needed
-- Current PID values are well-tuned for this use case"""
+- Current PID values are well-tuned for this use case""",
         },
         {
-            "instruction": "Analyze this flight log and recommend PID tuning adjustments.",
+            "instruction": "Analyze this flight log and recommend PID tuning adjustments.",  # noqa: E501
             "input": """Flight Log Analysis:
 - Max Roll Error: 22.5°
 - Overshoot: 18%
@@ -206,10 +215,10 @@ Recommendations:
 3. Increase ATC_RAT_RLL_D: 0.001 → 0.003 (200% increase)
    Rationale: More damping for heavy payload
 4. Reduce INS_GYRO_FILTER: 80 → 50 Hz
-   Rationale: Reduce vibration impact on control"""
+   Rationale: Reduce vibration impact on control""",
         },
         {
-            "instruction": "Analyze this flight log and recommend navigation parameter adjustments.",
+            "instruction": "Analyze this flight log and recommend navigation parameter adjustments.",  # noqa: E501
             "input": """Flight Log Analysis:
 - GPS Glitches: 12 occurrences
 - Position Drift: 5.2m
@@ -229,10 +238,10 @@ Recommendations:
 2. Adjust EK3_ABIAS_P: 0.01 → 0.005 (lower variance)
    Rationale: Reduce accelerometer bias drift
 3. Consider adding GPS glitch filtering
-   Check: COMPASS_ENABLE, GPS_CONFIG parameters"""
+   Check: COMPASS_ENABLE, GPS_CONFIG parameters""",
         },
         {
-            "instruction": "Analyze this flight log and recommend motor output adjustments.",
+            "instruction": "Analyze this flight log and recommend motor output adjustments.",  # noqa: E501
             "input": """Flight Log Analysis:
 - Motor Temperature: 78°C (max)
 - Current MOT_SPIN_MIN: 0
@@ -252,10 +261,10 @@ Recommendations:
    Rationale: Prevent motor stalls at low throttle
 2. Consider reducing max throttle for temperature management
 3. Recommend adding motor thermal protection
-   Check: MOT_TORQUE_BOOST, MOT_THT_AVERAGE_MAX parameters"""
+   Check: MOT_TORQUE_BOOST, MOT_THT_AVERAGE_MAX parameters""",
         },
         {
-            "instruction": "Analyze this flight log and recommend filter adjustments.",
+            "instruction": "Analyze this flight log and recommend filter adjustments.",  # noqa: E501
             "input": """Flight Log Analysis:
 - Vibrations: 4.2g (high)
 - FFT Analysis: Peak at 180Hz
@@ -276,10 +285,10 @@ Recommendations:
 3. Set INS_HNTC2_BW: 40Hz
    Rationale: Narrow notch to preserve control bandwidth
 4. Increase INS_GYRO_FILTER: 80 → 100Hz
-   Rationale: Compensate for notch filter phase delay"""
+   Rationale: Compensate for notch filter phase delay""",
         },
         {
-            "instruction": "Analyze this flight log and recommend attitude controller adjustments.",
+            "instruction": "Analyze this flight log and recommend attitude controller adjustments.",  # noqa: E501
             "input": """Flight Log Analysis:
 - Max Pitch Error: 18.3°
 - Overshoot: 14%
@@ -300,10 +309,10 @@ Recommendations:
 2. Increase ATC_RAT_PIT_D: 0.002 → 0.006 (200% increase)
    Rationale: Critical for damping oscillations
 3. Reduce ATC_ANG_PIT_P: 4.5 → 3.0
-   Rationale: Lower angle controller gain for smoothness"""
+   Rationale: Lower angle controller gain for smoothness""",
         },
         {
-            "instruction": "Analyze this flight log and recommend yaw tuning adjustments.",
+            "instruction": "Analyze this flight log and recommend yaw tuning adjustments.",  # noqa: E501
             "input": """Flight Log Analysis:
 - Yaw Oscillations: Persistent after commands
 - Yaw Settling Time: 3.5s (too slow)
@@ -323,8 +332,8 @@ Recommendations:
 2. Increase ATC_RAT_YAW_I: 0.05 → 0.08 (60% increase)
    Rationale: Faster yaw correction
 3. Increase ATC_RAT_YAW_MAX: 3600 → 5400
-   Rationale: Allow faster yaw rate for racing"""
-        }
+   Rationale: Allow faster yaw rate for racing""",
+        },
     ]
 
 
@@ -340,12 +349,17 @@ def format_examples(examples: List[Dict], tokenizer) -> List[str]:
         output_text = ex.get("output", "")
 
         messages = [
-            {"role": "system", "content": "You are an expert ArduPilot tuning AI."},
+            {
+                "role": "system",
+                "content": "You are an expert ArduPilot tuning AI.",
+            },
             {"role": "user", "content": f"{instruction}\n\n{input_text}"},
-            {"role": "assistant", "content": output_text}
+            {"role": "assistant", "content": output_text},
         ]
-        
-        text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False)
+
+        text = tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=False
+        )
         formatted.append(text)
 
     return formatted
@@ -366,12 +380,14 @@ def prepare_dataset(examples: List[Dict], tokenizer, max_length: int = 2048):
     )
 
     # Create dataset with one row per sample.
-    dataset = Dataset.from_dict({
-        "input_ids": encodings["input_ids"],
-        "attention_mask": encodings["attention_mask"],
-    })
+    dataset = Dataset.from_dict(
+        {
+            "input_ids": encodings["input_ids"],
+            "attention_mask": encodings["attention_mask"],
+        }
+    )
 
-    # DataCollatorForLanguageModeling will handle the "labels" and ignore pad tokens via -100 masking.
+    # DataCollatorForLanguageModeling will handle the "labels" and ignore pad tokens via -100 masking.  # noqa: E501
 
     return dataset
 
@@ -385,46 +401,47 @@ def train(
     num_epochs: int = 3,
     batch_size: int = 4,
     gradient_steps: int = 4,
-    seed: int = 42
+    seed: int = 42,
 ):
     """
     Main training function.
     """
     set_seed(seed)
     resolved_model_name = resolve_model_name(model_name)
-    
+
     print(f"\n{'='*60}")
-    print(f"ArduPilot AI Tuner - QLoRA Fine-tuning")
+    print("ArduPilot AI Tuner - QLoRA Fine-tuning")
     print(f"{'='*60}\n")
-    
+
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
-    
+
     if device.type == "cuda":
         print(f"GPU: {torch.cuda.get_device_name(0)}")
-        print(f"VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB\n")
-    
+        print(
+            f"VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB\n"  # noqa: E501
+        )
+
     # Load tokenizer
     print(f"Loading tokenizer: {resolved_model_name}")
     tokenizer = AutoTokenizer.from_pretrained(
-        resolved_model_name,
-        trust_remote_code=False
+        resolved_model_name, trust_remote_code=False
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
-    
+
     # Load base model
     print(f"Loading base model: {resolved_model_name}")
     model = AutoModelForCausalLM.from_pretrained(
         resolved_model_name,
         torch_dtype=torch.float16 if device.type == "cuda" else torch.float32,
         device_map="auto",
-        trust_remote_code=False
+        trust_remote_code=False,
     )
-    
+
     # Using eos_token as pad_token means token embeddings don't need resizing
-    
+
     # Configure LoRA
     lora_settings = load_lora_settings(rank)
     lora_config = LoraConfig(
@@ -435,25 +452,24 @@ def train(
         target_modules=lora_settings["target_modules"],
         bias=lora_settings["bias"],
     )
-    
+
     # Apply LoRA
     print("Applying LoRA adapters...")
     model = get_peft_model(model, lora_config)
     model.print_trainable_parameters()
-    
+
     # Load and prepare dataset
     print(f"\nLoading dataset from: {data_dir}")
     examples = load_dataset(data_dir)
     print(f"Loaded {len(examples)} training examples\n")
-    
+
     dataset = prepare_dataset(examples, tokenizer)
-    
+
     # Data collator
     data_collator = DataCollatorForLanguageModeling(
-        tokenizer=tokenizer,
-        mlm=False  # causal LM, not masked
+        tokenizer=tokenizer, mlm=False  # causal LM, not masked
     )
-    
+
     # Training arguments
     training_args = TrainingArguments(
         output_dir=output_dir,
@@ -470,54 +486,73 @@ def train(
         report_to=None,
         remove_unused_columns=False,
     )
-    
+
     # Train
     print("Starting training...\n")
-    
+
     from transformers import Trainer
-    
+
     trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=dataset,
         data_collator=data_collator,
     )
-    
+
     trainer.train()
-    
+
     # Save
     print(f"\nSaving model to: {output_dir}")
     model.save_pretrained(output_dir)
     tokenizer.save_pretrained(output_dir)
-    
-    print("\n" + "="*60)
+
+    print("\n" + "=" * 60)
     print("Training complete!")
-    print("="*60)
-    print(f"\nTo use the fine-tuned model:")
-    print(f"1. Convert to GGUF format for Ollama")
-    print(f"2. Or use with transformers directly")
+    print("=" * 60)
+    print("\nTo use the fine-tuned model:")
+    print("1. Convert to GGUF format for Ollama")
+    print("2. Or use with transformers directly")
     print(f"\nModel saved to: {output_dir}")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Fine-tune LLM for ArduPilot tuning")
-    parser.add_argument("--model", type=str, default="Qwen/Qwen2.5-7B-Instruct",
-                        help="Base model name (HuggingFace repo ID or supported Ollama alias)")
-    parser.add_argument("--data", type=str, default="../data/dataset/",
-                        help="Training data directory")
-    parser.add_argument("--output", type=str, default="./ardupilot-tuner-model",
-                        help="Output directory for trained model")
-    parser.add_argument("--rank", type=int, default=16,
-                        help="LoRA rank (higher = more capacity, more memory)")
-    parser.add_argument("--epochs", type=int, default=3,
-                        help="Number of training epochs")
-    parser.add_argument("--batch-size", type=int, default=4,
-                        help="Batch size")
-    parser.add_argument("--learning-rate", type=float, default=2e-4,
-                        help="Learning rate")
-    
+    parser = argparse.ArgumentParser(
+        description="Fine-tune LLM for ArduPilot tuning"
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="Qwen/Qwen2.5-7B-Instruct",
+        help="Base model name (HuggingFace repo ID or supported Ollama alias)",
+    )
+    parser.add_argument(
+        "--data",
+        type=str,
+        default="../data/dataset/",
+        help="Training data directory",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="./ardupilot-tuner-model",
+        help="Output directory for trained model",
+    )
+    parser.add_argument(
+        "--rank",
+        type=int,
+        default=16,
+        help="LoRA rank (higher = more capacity, more memory)",
+    )
+    parser.add_argument(
+        "--epochs", type=int, default=3, help="Number of training epochs"
+    )
+    parser.add_argument("--batch-size", type=int, default=4, help="Batch size")
+    parser.add_argument(
+        "--learning-rate", type=float, default=2e-4, help="Learning rate"
+    )
+
     args = parser.parse_args()
-    
+
     train(
         model_name=args.model,
         data_dir=args.data,
@@ -525,7 +560,7 @@ def main():
         rank=args.rank,
         num_epochs=args.epochs,
         batch_size=args.batch_size,
-        learning_rate=args.learning_rate
+        learning_rate=args.learning_rate,
     )
 
 

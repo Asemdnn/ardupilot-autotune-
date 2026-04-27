@@ -12,7 +12,7 @@ import main  # noqa: E402
 
 
 def test_parse_current_params_filters_invalid_tokens():
-    raw = "ATC_RAT_RLL_P=0.2, bad, INS_GYRO_FILTER=80;ATC_RAT_RLL_I=abc\nATC_RAT_RLL_D=0.004"
+    raw = "ATC_RAT_RLL_P=0.2, bad, INS_GYRO_FILTER=80;ATC_RAT_RLL_I=abc\nATC_RAT_RLL_D=0.004"  # noqa
     parsed = main.parse_current_params(raw)
 
     assert parsed["ATC_RAT_RLL_P"] == 0.2
@@ -24,7 +24,10 @@ def test_parse_current_params_filters_invalid_tokens():
 def test_sanitize_upload_filename_prevents_path_traversal():
     assert main.sanitize_upload_filename("..\\..\\secret.log") == "secret.log"
     assert main.sanitize_upload_filename("../../secret.bin") == "secret.bin"
-    assert main.sanitize_upload_filename("my unsafe file.log") == "my_unsafe_file.log"
+    assert (
+        main.sanitize_upload_filename("my unsafe file.log")
+        == "my_unsafe_file.log"
+    )
 
 
 @pytest.mark.asyncio
@@ -45,22 +48,23 @@ async def test_recommendations_use_vehicle_current_params():
         {
             "parameter": "ATC_RAT_RLL_P",
             "recommended": 0.15,
-            "reason": "Reduce roll overshoot for tighter racing response."
+            "reason": "Reduce roll overshoot for tighter racing response.",
         },
         {
             "parameter": "INS_HNTC2_ENABLE",
             "recommended": 1.0,
-            "reason": "Enable harmonic notch filtering to reduce vibration peaks."
-        }
+            "reason": "Enable harmonic notch filtering to reduce vibration peaks.",  # noqa
+        },
     ]
-    
+
     from unittest.mock import Mock
+
     mock_response = Mock()
     mock_response.json.return_value = {"response": json.dumps(mock_llm_json)}
     mock_response.raise_for_status = Mock()
-    
+
     mock_post = AsyncMock(return_value=mock_response)
-    
+
     with patch("httpx.AsyncClient.post", mock_post):
         recs = await main.generate_recommendations(
             metrics=metrics,
@@ -68,7 +72,7 @@ async def test_recommendations_use_vehicle_current_params():
             notes=None,
             current_params=current_params,
         )
-        
+
     by_param = {r["parameter"]: r for r in recs}
 
     assert by_param["ATC_RAT_RLL_P"]["current"] == "0.2"

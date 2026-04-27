@@ -1,6 +1,6 @@
 """
 ArduPilot AI Tuning System - Main Application
-A closed-loop system that analyzes flight logs and recommends optimal parameters.
+A closed-loop system that analyzes flight logs and recommends optimal parameters.  # noqa
 """
 
 import json
@@ -65,57 +65,118 @@ DRONE_TYPE_INFO = {
     "fpv_racing": {
         "name": "FPV Racing Drone",
         "description": "Fast, agile drone for racing and freestyle",
-        "focus_params": ["ATC_RAT_RLL_P", "ATC_RAT_RLL_D", "ATC_RAT_YAW_P", "ATC_RAT_RLL_MAX"],
-        "typical_issues": ["Overshoot", "High vibration", "Yaw wobble"]
+        "focus_params": [
+            "ATC_RAT_RLL_P",
+            "ATC_RAT_RLL_D",
+            "ATC_RAT_YAW_P",
+            "ATC_RAT_RLL_MAX",
+        ],
+        "typical_issues": ["Overshoot", "High vibration", "Yaw wobble"],
     },
     "cinematic": {
         "name": "Cinematic/Aerial Photography",
         "description": "Camera drone requiring smooth, stable flight",
-        "focus_params": ["ATC_RAT_PIT_P", "ATC_ANG_PIT_P", "PSC_POS_Z_P", "PSC_VEL_Z_P"],
-        "typical_issues": ["Jitter", "Altitude drift", "Oscillations"]
+        "focus_params": [
+            "ATC_RAT_PIT_P",
+            "ATC_ANG_PIT_P",
+            "PSC_POS_Z_P",
+            "PSC_VEL_Z_P",
+        ],
+        "typical_issues": ["Jitter", "Altitude drift", "Oscillations"],
     },
     "survey": {
         "name": "Survey/Mapping Drone",
         "description": "Precision mapping with GPS accuracy",
-        "focus_params": ["EK3_GPS_GAIN", "PSC_POS_X_P", "FENCE_ENABLE", "WPNAV_SPEED"],
-        "typical_issues": ["GPS drift", "Position error", "Waypoint overshoot"]
+        "focus_params": [
+            "EK3_GPS_GAIN",
+            "PSC_POS_X_P",
+            "FENCE_ENABLE",
+            "WPNAV_SPEED",
+        ],
+        "typical_issues": [
+            "GPS drift",
+            "Position error",
+            "Waypoint overshoot",
+        ],
     },
     "agricultural": {
         "name": "Agricultural Sprayer",
         "description": "Heavy payload spraying drone",
-        "focus_params": ["MOT_BAT_VOLT_MAX", "MOT_SPIN_MIN", "ATC_RAT_RLL_P", "INS_GYRO_FILTER"],
-        "typical_issues": ["Motor overheating", "Vibration", "Payload handling"]
+        "focus_params": [
+            "MOT_BAT_VOLT_MAX",
+            "MOT_SPIN_MIN",
+            "ATC_RAT_RLL_P",
+            "INS_GYRO_FILTER",
+        ],
+        "typical_issues": [
+            "Motor overheating",
+            "Vibration",
+            "Payload handling",
+        ],
     },
     "heavy_lift": {
         "name": "Heavy Lift Drone",
         "description": "Large drone carrying heavy payloads",
-        "focus_params": ["ATC_RAT_RLL_P", "ATC_RAT_RLL_I", "INS_GYRO_FILTER", "PSC_ACCZ_P"],
-        "typical_issues": ["Overshoot", "Slow response", "Vibration"]
+        "focus_params": [
+            "ATC_RAT_RLL_P",
+            "ATC_RAT_RLL_I",
+            "INS_GYRO_FILTER",
+            "PSC_ACCZ_P",
+        ],
+        "typical_issues": ["Overshoot", "Slow response", "Vibration"],
     },
     "vtol": {
         "name": "VTOL Aircraft",
         "description": "Vertical takeoff and landing aircraft",
-        "focus_params": ["VT_FW_Q_SPEED", "VT_TRANS_TIME", "TECS_PITCH_MAX", "CRUISE_SPEED"],
-        "typical_issues": ["Transition issues", "Forward flight handling"]
+        "focus_params": [
+            "VT_FW_Q_SPEED",
+            "VT_TRANS_TIME",
+            "TECS_PITCH_MAX",
+            "CRUISE_SPEED",
+        ],
+        "typical_issues": ["Transition issues", "Forward flight handling"],
     },
     "fixed_wing": {
         "name": "Fixed Wing Plane",
         "description": "Traditional airplane autopilot",
-        "focus_params": ["TECS_SPDWEIGHT", "CRUISE_SPEED", "RTL_SPEED", "WPNAV_SPEED"],
-        "typical_issues": ["Speed control", "Altitude overshoot", "Landing approach"]
+        "focus_params": [
+            "TECS_SPDWEIGHT",
+            "CRUISE_SPEED",
+            "RTL_SPEED",
+            "WPNAV_SPEED",
+        ],
+        "typical_issues": [
+            "Speed control",
+            "Altitude overshoot",
+            "Landing approach",
+        ],
     },
     "rover": {
         "name": "Rover/Ground Vehicle",
         "description": "Ground-based autonomous vehicle",
-        "focus_params": ["CRUISE_SPEED", "SERVO5_FUNCTION", "RC1_TRIM", "RC2_TRIM"],
-        "typical_issues": ["Wheel slip", "Speed overshoot"]
+        "focus_params": [
+            "CRUISE_SPEED",
+            "SERVO5_FUNCTION",
+            "RC1_TRIM",
+            "RC2_TRIM",
+        ],
+        "typical_issues": ["Wheel slip", "Speed overshoot"],
     },
     "helicopter": {
         "name": "Helicopter",
         "description": "Single rotor helicopter",
-        "focus_params": ["HELI_GOV_ENABLE", "ATC_RAT_RLL_P", "ATC_RAT_PIT_P", "RCOUT_MIN"],
-        "typical_issues": ["Rotor RPM", "Governor tuning", "Collective response"]
-    }
+        "focus_params": [
+            "HELI_GOV_ENABLE",
+            "ATC_RAT_RLL_P",
+            "ATC_RAT_PIT_P",
+            "RCOUT_MIN",
+        ],
+        "typical_issues": [
+            "Rotor RPM",
+            "Governor tuning",
+            "Collective response",
+        ],
+    },
 }
 
 # In-memory training state
@@ -127,8 +188,10 @@ training_tasks: Dict[str, asyncio.Task] = {}
 def _build_parameter_index() -> Dict[str, Dict]:
     index: Dict[str, Dict] = {}
     for category in ARDUPILOT_PARAMETERS.values():
-        for param_name, param_info in category.get("parameters", {}).items():
-            index[param_name] = param_info
+        params = category.get("parameters", {})
+        if isinstance(params, dict):
+            for param_name, param_info in params.items():
+                index[param_name] = param_info
     return index
 
 
@@ -149,7 +212,9 @@ def load_vehicles() -> List[Dict]:
             with open(VEHICLES_FILE, encoding="utf-8") as f:
                 return json.load(f)
         except json.JSONDecodeError:
-            print(f"Warning: Failed to decode {VEHICLES_FILE}. Returning empty list.")
+            print(
+                f"Warning: Failed to decode {VEHICLES_FILE}. Returning empty list."  # noqa
+            )
             return []
     return []
 
@@ -198,7 +263,7 @@ async def save_uploaded_file(file: UploadFile, destination: Path) -> int:
             if total_bytes > MAX_UPLOAD_SIZE_BYTES:
                 raise HTTPException(
                     status_code=413,
-                    detail=f"File too large. Maximum allowed size is {MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB.",
+                    detail=f"File too large. Maximum allowed size is {MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB.",  # noqa
                 )
             f.write(chunk)
     return total_bytes
@@ -229,7 +294,10 @@ def get_parameter_default(parameter: str) -> Optional[float]:
     if not info:
         return None
     try:
-        return float(info.get("default"))
+        val = info.get("default")
+        if val is None:
+            return None
+        return float(val)
     except (TypeError, ValueError):
         return None
 
@@ -254,10 +322,7 @@ def normalize_model_name(model_name: str) -> str:
 
 
 def build_recommendation(
-    parameter: str,
-    current_value: float,
-    recommended_value: float,
-    reason: str
+    parameter: str, current_value: float, recommended_value: float, reason: str
 ) -> Dict:
     info = PARAMETER_INDEX.get(parameter, {})
     recommendation = {
@@ -268,7 +333,9 @@ def build_recommendation(
     }
 
     if info.get("unit") == "bool":
-        recommendation["change"] = "Enable" if recommended_value >= 1 else "Disable"
+        recommendation["change"] = (
+            "Enable" if recommended_value >= 1 else "Disable"
+        )
         return recommendation
 
     if current_value == 0:
@@ -283,7 +350,7 @@ def build_recommendation(
 def add_recommendation(
     recommendations: List[Dict],
     current_params: Dict[str, float],
-    suggestion: ParameterSuggestion
+    suggestion: ParameterSuggestion,
 ):
     parameter = suggestion.parameter
 
@@ -296,7 +363,9 @@ def add_recommendation(
     if current_value is None:
         return
 
-    recommended_value = clamp_parameter_value(parameter, suggestion.target_value)
+    recommended_value = clamp_parameter_value(
+        parameter, suggestion.target_value
+    )
     if abs(recommended_value - current_value) < 1e-9:
         return
 
@@ -317,7 +386,7 @@ def percent_adjustment(value: float, multiplier: float) -> float:
 app = FastAPI(
     title="ArduPilot AI Tuner",
     description="AI-powered parameter tuning system for ArduPilot drones",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # Setup templates
@@ -336,8 +405,8 @@ async def home(request: Request):
         context={
             "vehicles": vehicles,
             "active_vehicle": active_vehicle,
-            "drone_types": DRONE_TYPE_INFO
-        }
+            "drone_types": DRONE_TYPE_INFO,
+        },
     )
 
 
@@ -346,7 +415,7 @@ async def create_vehicle(
     name: str = Form(...),
     drone_type: str = Form(...),
     description: Optional[str] = Form(None),
-    current_params: Optional[str] = Form(None)
+    current_params: Optional[str] = Form(None),
 ):
     """Create a new vehicle profile."""
     vehicles = load_vehicles()
@@ -364,7 +433,7 @@ async def create_vehicle(
         "current_params": current_params or "",
         "focus_params": type_info["focus_params"],
         "created_at": datetime.now().isoformat(),
-        "flight_count": 0
+        "flight_count": 0,
     }
 
     vehicles.append(new_vehicle)
@@ -426,17 +495,16 @@ async def analyze_log(
     request: Request,
     file: UploadFile = File(...),
     notes: Optional[str] = Form(None),
-    model: str = Form("qwen2.5:7b")
+    model: str = Form("qwen2.5:7b"),
 ):
     """Analyze a flight log and return parameter recommendations."""
     current_vehicle = get_active_vehicle_from_request(request)
-
 
     # Check if vehicle is selected
     if not current_vehicle:
         raise HTTPException(
             status_code=400,
-            detail="Please create or select a vehicle first before uploading logs."
+            detail="Please create or select a vehicle first before uploading logs.",  # noqa
         )
 
     if not file.filename:
@@ -449,25 +517,32 @@ async def analyze_log(
     if file_extension not in ALLOWED_LOG_EXTENSIONS:
         raise HTTPException(
             status_code=400,
-            detail="Invalid file format. Please upload .bin or .log files."
+            detail="Invalid file format. Please upload .bin or .log files.",
         )
 
     # Save uploaded file
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     unique_suffix = uuid.uuid4().hex[:8]
     vehicle_prefix = current_vehicle["drone_type"]
-    filepath = LOGS_DIR / f"{vehicle_prefix}_{timestamp}_{unique_suffix}_{safe_file_name}"
+    filepath = (
+        LOGS_DIR
+        / f"{vehicle_prefix}_{timestamp}_{unique_suffix}_{safe_file_name}"
+    )
 
     try:
         written_bytes = await save_uploaded_file(file, filepath)
         if written_bytes <= 0:
-            raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+            raise HTTPException(
+                status_code=400, detail="Uploaded file is empty."
+            )
 
         # Analyze the log
         metrics = await asyncio.to_thread(analyze_flight_log, str(filepath))
 
         # Generate recommendations based on vehicle type
-        current_params = parse_current_params(current_vehicle.get("current_params"))
+        current_params = parse_current_params(
+            current_vehicle.get("current_params")
+        )
         recommendations = await generate_recommendations(
             metrics,
             current_vehicle["drone_type"],
@@ -477,7 +552,9 @@ async def analyze_log(
         )
 
         # Save output
-        output_file = OUTPUTS_DIR / f"{timestamp}_{unique_suffix}_analysis.json"
+        output_file = (
+            OUTPUTS_DIR / f"{timestamp}_{unique_suffix}_analysis.json"
+        )
         output_data = {
             "vehicle_id": current_vehicle["id"],
             "vehicle_name": current_vehicle["name"],
@@ -501,14 +578,16 @@ async def analyze_log(
                 break
         save_vehicles(vehicles)
 
-        return JSONResponse({
-            "status": "success",
-            "vehicle": current_vehicle["name"],
-            "drone_type": current_vehicle["drone_type_name"],
-            "metrics": metrics,
-            "recommendations": recommendations,
-            "log_file": str(filepath)
-        })
+        return JSONResponse(
+            {
+                "status": "success",
+                "vehicle": current_vehicle["name"],
+                "drone_type": current_vehicle["drone_type_name"],
+                "metrics": metrics,
+                "recommendations": recommendations,
+                "log_file": str(filepath),
+            }
+        )
 
     except HTTPException:
         if filepath.exists():
@@ -527,12 +606,12 @@ async def generate_recommendations(
     drone_type: str,
     notes: Optional[str] = None,
     current_params: Optional[Dict[str, float]] = None,
-    model: str = "qwen2.5:7b"
+    model: str = "qwen2.5:7b",
 ) -> List[Dict]:
-    """Generate parameter recommendations by communicating with Ollama JSON API."""
+    """Generate parameter recommendations by communicating with Ollama JSON API."""  # noqa
     recommendations: List[Dict] = []
     current_params = current_params or {}
-    
+
     # 1. Structure the prompt to the LLM
     prompt = f"""You are an expert ArduPilot tuning AI.
 The user is tuning a '{drone_type}' drone.
@@ -545,8 +624,8 @@ Current parameters from the user's config:
 Pilot Notes/Feedback:
 {notes if notes else 'None'}
 
-Analyze the metrics and notes. 
-Output your tuning recommendations strictly as a JSON list of objects with the exact schema below. Do not output anything else.
+Analyze the metrics and notes.  # noqa
+Output your tuning recommendations strictly as a JSON list of objects with the exact schema below. Do not output anything else.  # noqa
 
 Schema:
 [
@@ -563,17 +642,20 @@ If no tuning is needed, return an empty array: []
     # 2. Make Request to Local Ollama Node
     try:
         async with httpx.AsyncClient(timeout=90.0) as client:
-            response = await client.post("http://localhost:11434/api/generate", json={
-                "model": model,
-                "prompt": prompt,
-                "stream": False,
-                "format": "json"
-            })
+            response = await client.post(
+                "http://localhost:11434/api/generate",
+                json={
+                    "model": model,
+                    "prompt": prompt,
+                    "stream": False,
+                    "format": "json",
+                },
+            )
             response.raise_for_status()
-            
+
             data = response.json()
             llm_text = data.get("response", "[]")
-            
+
             # Strip markdown JSON wrappers if present
             llm_text = llm_text.strip()
             if llm_text.startswith("```json"):
@@ -581,7 +663,7 @@ If no tuning is needed, return an empty array: []
             if llm_text.endswith("```"):
                 llm_text = llm_text[:-3]
             llm_text = llm_text.strip()
-            
+
             # 3. Parse and sanitize the response
             try:
                 parsed_recs = json.loads(llm_text)
@@ -590,20 +672,20 @@ If no tuning is needed, return an empty array: []
             except json.JSONDecodeError:
                 print("Failed to decode LLM JSON:", llm_text)
                 parsed_recs = []
-                
+
             for raw_rec in parsed_recs:
                 parameter = raw_rec.get("parameter")
                 target_value = raw_rec.get("recommended")
                 reason = raw_rec.get("reason", "No reason provided")
-                
+
                 if not parameter or target_value is None:
                     continue
-                    
+
                 try:
                     target_value = float(target_value)
                 except ValueError:
                     continue
-                    
+
                 add_recommendation(
                     recommendations,
                     current_params,
@@ -611,15 +693,15 @@ If no tuning is needed, return an empty array: []
                         parameter=parameter,
                         target_value=target_value,
                         reason=reason,
-                    )
+                    ),
                 )
 
     except Exception as e:
         print(f"Error calling Ollama API: {e}")
-        # In actual production, you might raise an HTTPException, but here we'll return an empty list or mock error
+        # In actual production, you might raise an HTTPException, but here we'll return an empty list or mock error  # noqa
         raise HTTPException(
             status_code=502,
-            detail=f"Failed to communicate with local Ollama service for inference: {str(e)}"
+            detail=f"Failed to communicate with local Ollama service for inference: {str(e)}",  # noqa
         )
 
     return recommendations
@@ -632,17 +714,20 @@ def _read_history_sync(vehicle_id: Optional[int] = None) -> list:
             with open(output_file, encoding="utf-8") as f:
                 data = json.load(f)
             if vehicle_id is None or data.get("vehicle_id") == vehicle_id:
-                history.append({
-                    "timestamp": data.get("timestamp"),
-                    "vehicle_name": data.get("vehicle_name"),
-                    "drone_type": data.get("drone_type"),
-                    "metrics": data.get("metrics", {}),
-                    "recommendations": data.get("recommendations", [])
-                })
+                history.append(
+                    {
+                        "timestamp": data.get("timestamp"),
+                        "vehicle_name": data.get("vehicle_name"),
+                        "drone_type": data.get("drone_type"),
+                        "metrics": data.get("metrics", {}),
+                        "recommendations": data.get("recommendations", []),
+                    }
+                )
         except (OSError, json.JSONDecodeError):
             continue
     history.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
     return history
+
 
 @app.get("/history")
 async def get_history(vehicle_id: Optional[int] = None):
@@ -665,13 +750,10 @@ async def list_parameters():
 
 
 @app.post("/parameters/validate")
-async def validate_param(
-    parameter: str = Form(...),
-    value: str = Form(...)
-):
+async def validate_param(parameter: str = Form(...), value: str = Form(...)):
     """Validate if a parameter value is within safe bounds."""
     is_valid, message = validate_parameter(parameter, value)
-    
+
     if is_valid:
         return JSONResponse({"status": "valid", "message": message})
     else:
@@ -752,7 +834,9 @@ async def run_training_job(job_id: str, model_name: str, epochs: int):
             training_jobs[job_id]["progress"] = 100
         else:
             training_jobs[job_id]["status"] = "failed"
-            training_jobs[job_id]["error"] = f"Training exited with code {return_code}"
+            training_jobs[job_id][
+                "error"
+            ] = f"Training exited with code {return_code}"
     except asyncio.CancelledError:
         raise
     except Exception as exc:
@@ -763,21 +847,30 @@ async def run_training_job(job_id: str, model_name: str, epochs: int):
         training_processes.pop(job_id, None)
         training_tasks.pop(job_id, None)
 
+
 @app.post("/training/start")
-async def start_training(
-    model_name: str = Form(...),
-    epochs: int = Form(3)
-):
+async def start_training(model_name: str = Form(...), epochs: int = Form(3)):
     """Start fine-tuning the model."""
     if epochs < 1 or epochs > 20:
-        raise HTTPException(status_code=400, detail="Epochs must be between 1 and 20.")
+        raise HTTPException(
+            status_code=400, detail="Epochs must be between 1 and 20."
+        )
 
     normalized_model = model_name.strip()
-    if normalized_model not in MODEL_ALIASES and normalized_model not in MODEL_ALIASES.values():
-        raise HTTPException(status_code=400, detail="Invalid model name. Must be a supported model.")
+    if (
+        normalized_model not in MODEL_ALIASES
+        and normalized_model not in MODEL_ALIASES.values()
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid model name. Must be a supported model.",
+        )
 
     if not (DATA_DIR / "dataset").exists():
-        raise HTTPException(status_code=400, detail="Dataset directory is missing: data/dataset")
+        raise HTTPException(
+            status_code=400,
+            detail="Dataset directory is missing: data/dataset",
+        )
 
     job_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
 
@@ -786,17 +879,19 @@ async def start_training(
         "model": model_name,
         "epochs": epochs,
         "started_at": datetime.now().isoformat(),
-        "progress": 0
+        "progress": 0,
     }
 
     task = asyncio.create_task(run_training_job(job_id, model_name, epochs))
     training_tasks[job_id] = task
 
-    return JSONResponse({
-        "status": "started",
-        "job_id": job_id,
-        "message": f"Training started with {model_name} for {epochs} epochs"
-    })
+    return JSONResponse(
+        {
+            "status": "started",
+            "job_id": job_id,
+            "message": f"Training started with {model_name} for {epochs} epochs",  # noqa
+        }
+    )
 
 
 @app.get("/training/status")
@@ -829,14 +924,17 @@ async def stop_training(job_id: str = Form(...)):
 
         training_jobs[job_id]["status"] = "stopped"
         training_jobs[job_id]["finished_at"] = datetime.now().isoformat()
-        return JSONResponse({
-            "status": "stopped",
-            "job_id": job_id,
-            "message": "Training job stopped"
-        })
+        return JSONResponse(
+            {
+                "status": "stopped",
+                "job_id": job_id,
+                "message": "Training job stopped",
+            }
+        )
     raise HTTPException(status_code=404, detail="Job not found")
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
