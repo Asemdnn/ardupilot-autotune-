@@ -29,6 +29,7 @@ def analyze_flight_log(log_path: str) -> Dict:
         "gps_horizontal_accuracy": 0.0,
         "battery_voltage_min": 0.0,
         "loop_time_ms": 0.0,  # CLpt converted to ms (was cpu_load_max)
+        "parameters": {},
     }
 
     if not os.path.exists(log_path):
@@ -46,6 +47,7 @@ def analyze_flight_log(log_path: str) -> Dict:
         gps_hdop_max = 0.0
         max_roll_rate = 0.0
         max_pitch_rate = 0.0
+        log_params: Dict[str, float] = {}
 
         # for maneuver step response
         rate_data: Dict[str, List[float]] = {
@@ -67,6 +69,7 @@ def analyze_flight_log(log_path: str) -> Dict:
                         "BAT2",
                         "VIBE",
                         "PERF",
+                        "PARM",
                     ],
                     blocking=False,
                 )
@@ -76,7 +79,8 @@ def analyze_flight_log(log_path: str) -> Dict:
                 msg_type = msg.get_type()
 
                 if msg_type == "PERF" and hasattr(msg, "CLpt"):
-                    # CLpt is loop execution time in microseconds; convert to ms
+                    # CLpt is loop execution time in microseconds;
+                    # convert to ms
                     cpu_max = max(cpu_max, getattr(msg, "CLpt", 0) / 1000.0)
 
                 elif msg_type == "RATE":
@@ -99,7 +103,9 @@ def analyze_flight_log(log_path: str) -> Dict:
                 elif msg_type == "GPS" and hasattr(msg, "HDop"):
                     gps_hdop_max = max(gps_hdop_max, getattr(msg, "HDop", 0.0))
 
-                elif msg_type in ["BAT", "BATT", "BAT2"] and hasattr(msg, "Volt"):
+                elif msg_type in ["BAT", "BATT", "BAT2"] and hasattr(
+                    msg, "Volt"
+                ):
                     volt_min = min(volt_min, getattr(msg, "Volt", 0.0))
 
                 elif msg_type == "VIBE":
@@ -109,6 +115,15 @@ def analyze_flight_log(log_path: str) -> Dict:
                     vz = getattr(msg, "VibeZ", 0.0)
                     v = math.sqrt(vx**2 + vy**2 + vz**2)
                     vibration_max = max(vibration_max, v)
+
+                elif msg_type == "PARM":
+                    name = getattr(msg, "Name", None)
+                    value = getattr(msg, "Value", None)
+                    if name is not None and value is not None:
+                        try:
+                            log_params[name] = float(value)
+                        except (ValueError, TypeError):
+                            pass
         finally:
             mlog.close()
 
@@ -122,6 +137,7 @@ def analyze_flight_log(log_path: str) -> Dict:
         metrics["max_roll_rate"] = max_roll_rate
         metrics["max_pitch_rate"] = max_pitch_rate
         metrics["gps_horizontal_accuracy"] = gps_hdop_max
+        metrics["parameters"] = log_params
 
         df = pd.DataFrame(rate_data)
         if not df.empty:
@@ -263,6 +279,7 @@ def _basic_parse(log_path: str) -> Dict:
         "gps_horizontal_accuracy": 0.0,
         "battery_voltage_min": 0.0,
         "loop_time_ms": 0.0,
+        "parameters": {},
     }
 
 

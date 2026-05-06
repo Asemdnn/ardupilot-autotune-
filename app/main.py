@@ -540,9 +540,12 @@ async def analyze_log(
         metrics = await asyncio.to_thread(analyze_flight_log, str(filepath))
 
         # Generate recommendations based on vehicle type
-        current_params = parse_current_params(
+        profile_params = parse_current_params(
             current_vehicle.get("current_params")
         )
+        # Parameters extracted from log take precedence over profile parameters
+        log_params = metrics.get("parameters", {})
+        current_params = {**profile_params, **log_params}
         recommendations = await generate_recommendations(
             metrics,
             current_vehicle["drone_type"],

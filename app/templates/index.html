@@ -443,11 +443,7 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <label>Current Parameters (Optional)</label>
-                <textarea id="currentParams" rows="3"
-                          placeholder="e.g., ATC_RAT_RLL_P=0.12, ATC_RAT_RLL_I=0.05"></textarea>
-            </div>
+
 
             <button class="btn btn-primary" id="createVehicleBtn" onclick="createVehicle()">
                 ➕ Create Vehicle
@@ -632,7 +628,7 @@
             const fd = new FormData();
             fd.append('name', name);
             fd.append('drone_type', typeEl.dataset.type);
-            fd.append('current_params', document.getElementById('currentParams').value);
+            fd.append('current_params', '');
 
             const btn = document.getElementById('createVehicleBtn');
             btn.disabled = true;
