@@ -75,40 +75,40 @@ def analyze_flight_log(log_path: str) -> Dict:
 
                 msg_type = msg.get_type()
 
-            if msg_type == "PERF" and hasattr(msg, "CLpt"):
-                # CLpt is loop execution time in microseconds; convert to ms
-                cpu_max = max(cpu_max, getattr(msg, "CLpt", 0) / 1000.0)
+                if msg_type == "PERF" and hasattr(msg, "CLpt"):
+                    # CLpt is loop execution time in microseconds; convert to ms
+                    cpu_max = max(cpu_max, getattr(msg, "CLpt", 0) / 1000.0)
 
-            elif msg_type == "RATE":
-                # Use getattr with defaults in case of legacy names
-                time_us = getattr(msg, "TimeUS", 0)
-                r_des = getattr(msg, "RDes", 0.0)
-                r_act = getattr(msg, "R", 0.0)
-                p_des = getattr(msg, "PDes", 0.0)
-                p_act = getattr(msg, "P", 0.0)
+                elif msg_type == "RATE":
+                    # Use getattr with defaults in case of legacy names
+                    time_us = getattr(msg, "TimeUS", 0)
+                    r_des = getattr(msg, "RDes", 0.0)
+                    r_act = getattr(msg, "R", 0.0)
+                    p_des = getattr(msg, "PDes", 0.0)
+                    p_act = getattr(msg, "P", 0.0)
 
-                max_roll_rate = max(max_roll_rate, abs(r_act))
-                max_pitch_rate = max(max_pitch_rate, abs(p_act))
+                    max_roll_rate = max(max_roll_rate, abs(r_act))
+                    max_pitch_rate = max(max_pitch_rate, abs(p_act))
 
-                rate_data["TimeUS"].append(time_us)
-                rate_data["RDes"].append(r_des)
-                rate_data["R"].append(r_act)
-                rate_data["PDes"].append(p_des)
-                rate_data["P"].append(p_act)
+                    rate_data["TimeUS"].append(time_us)
+                    rate_data["RDes"].append(r_des)
+                    rate_data["R"].append(r_act)
+                    rate_data["PDes"].append(p_des)
+                    rate_data["P"].append(p_act)
 
-            elif msg_type == "GPS" and hasattr(msg, "HDop"):
-                gps_hdop_max = max(gps_hdop_max, getattr(msg, "HDop", 0.0))
+                elif msg_type == "GPS" and hasattr(msg, "HDop"):
+                    gps_hdop_max = max(gps_hdop_max, getattr(msg, "HDop", 0.0))
 
-            elif msg_type in ["BAT", "BATT", "BAT2"] and hasattr(msg, "Volt"):
-                volt_min = min(volt_min, getattr(msg, "Volt", 0.0))
+                elif msg_type in ["BAT", "BATT", "BAT2"] and hasattr(msg, "Volt"):
+                    volt_min = min(volt_min, getattr(msg, "Volt", 0.0))
 
-            elif msg_type == "VIBE":
-                # ArduPilot 4.x exposes VibeX/VibeY/VibeZ natively in VIBE
-                vx = getattr(msg, "VibeX", 0.0)
-                vy = getattr(msg, "VibeY", 0.0)
-                vz = getattr(msg, "VibeZ", 0.0)
-                v = math.sqrt(vx**2 + vy**2 + vz**2)
-                vibration_max = max(vibration_max, v)
+                elif msg_type == "VIBE":
+                    # ArduPilot 4.x exposes VibeX/VibeY/VibeZ natively in VIBE
+                    vx = getattr(msg, "VibeX", 0.0)
+                    vy = getattr(msg, "VibeY", 0.0)
+                    vz = getattr(msg, "VibeZ", 0.0)
+                    v = math.sqrt(vx**2 + vy**2 + vz**2)
+                    vibration_max = max(vibration_max, v)
         finally:
             mlog.close()
 
